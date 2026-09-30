@@ -1,36 +1,25 @@
-// Excel Processing and Export Utility using SheetJS
+// Excel Processing and Export Utility with Exact Color & Style Formatting
 (function() {
   // Mapping rules: Normalized Excel Header -> Database field key
   const HEADER_MAP = {
-    // ID
     'id': 'id',
     'employee id': 'id',
     'كود الموظف': 'id',
     'الرقم الوظيفي': 'id',
-
-    // Serial
     's.': 'serial_no',
     's': 'serial_no',
     'serial': 'serial_no',
     'مسلسل': 'serial_no',
     'م': 'serial_no',
-
-    // ASD
     'asd': 'asd',
-
-    // Hiring Type
     'hiring type': 'hiring_type',
     'نوع التعيين': 'hiring_type',
-
-    // Names
     'employee name': 'employee_name',
     'name': 'employee_name',
     'اسم الموظف': 'employee_name',
     'أســم الموظف بالعربية': 'employee_name_ar',
     'اسم الموظف بالعربية': 'employee_name_ar',
     'الاسم بالعربي': 'employee_name_ar',
-
-    // Job Details
     'job post': 'job_post',
     'المسمى الوظيفي': 'job_post',
     'jop title': 'job_title',
@@ -41,8 +30,6 @@
     'المستوى الإداري': 'managerial_level',
     'job tree': 'job_tree',
     'شجرة الوظائف': 'job_tree',
-
-    // Company & Costs
     'company (sector)': 'company_sector',
     'company(sector)': 'company_sector',
     'sector': 'company_sector',
@@ -55,18 +42,14 @@
     'costed by (sector)': 'costed_by_sector',
     'costed by(sector)': 'costed_by_sector',
     'costed by sector': 'costed_by_sector',
-
-    // Location
     'locations': 'locations',
     'location': 'locations',
     'الموقع': 'locations',
     'sub-location': 'sub_location',
     'sub location': 'sub_location',
     'الموقع الفرعي': 'sub_location',
-
-    // Department & Division
     'division': 'division',
-    'القطاع العام': 'division',
+    'القطاع الرئيسي': 'division',
     'department': 'department',
     'الإدارة': 'department',
     'sub-department': 'sub_department',
@@ -74,16 +57,12 @@
     'القسم الفرعي': 'sub_department',
     'qalaa department': 'qalaa_department',
     'qalaa group functions': 'qalaa_group_functions',
-
-    // Levels & Grades
     'skilled / unskilled (second level)': 'skilled_unskilled',
     'skilled / unskilled': 'skilled_unskilled',
     'company level': 'company_level',
     'taqa level (grade)': 'taqa_level_grade',
     'taqa level': 'taqa_level_grade',
     'qalaa job group': 'qalaa_job_group',
-
-    // Dates & Status
     'start date': 'start_date',
     'تاريخ التعيين': 'start_date',
     'yoe': 'yoe',
@@ -127,7 +106,54 @@
     'المدير المباشر': 'manager'
   };
 
-  // Helper to normalize header string
+  // Exact Excel columns order & original color configuration
+  const EXCEL_COLUMN_CONFIG = [
+    { key: 'serial_no', header: 'S.', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'asd', header: 'ASD', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'hiring_type', header: 'Hiring Type', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'id', header: 'ID', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'employee_name', header: 'Employee Name', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'job_post', header: 'Job Post', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'job_title', header: 'Jop Title', bg: 'FF0000', fg: 'FFFFF3C9' },
+    { key: 'managerial_level', header: 'Mangerial Level', bg: 'FF0000', fg: 'FFFFF3C9' },
+    { key: 'job_tree', header: 'Job Tree', bg: 'FF0000', fg: 'FFFFF3C9' },
+    { key: 'company_sector', header: 'Company\n(Sector)', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'company', header: 'Company', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'costed_by_company', header: 'Costed by \n(Company)', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'costed_by_sector', header: 'Costed by \n(Sector)', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'locations', header: 'Locations', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'sub_location', header: 'Sub-Location', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'division', header: 'Division', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'department', header: 'Department', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'sub_department', header: 'Sub-Department', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'qalaa_department', header: 'Qalaa Department', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'qalaa_group_functions', header: 'Qalaa Group Functions', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'skilled_unskilled', header: 'Skilled / Unskilled \n(Second Level)', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'company_level', header: 'Company \nLevel', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'taqa_level_grade', header: 'TAQA Level (Grade)', bg: 'FF0000', fg: 'FFFFF3C9' },
+    { key: 'qalaa_job_group', header: 'Qalaa Job Group', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'start_date', header: 'Start Date', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'yoe', header: 'YOE', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'resignation_date', header: 'Resignation Date', bg: 'C00000', fg: 'FFFFF3C9' },
+    { key: 'gender', header: 'Gender', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'employment_type', header: 'Employment Type', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'type_of_contract', header: 'Type of Contract', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'birth_date', header: 'Birth Date', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'birth_month', header: 'Birth Month', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'age', header: 'Age', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'national_id', header: 'National ID', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'mobile_numbers', header: 'Mobile Numbers', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'insurance_number', header: 'Insurance Number', bg: 'FF0000', fg: 'FFFFF3C9' },
+    { key: 'bank_name', header: 'Bank Name', bg: 'FFEBEB', fg: '6C0000' },
+    { key: 'status', header: 'Status', bg: 'FFEBEB', fg: '6C0000' },
+    { key: 'account_numbers', header: 'Account Numbers', bg: 'FFEBEB', fg: '6C0000' },
+    { key: 'floor', header: 'Floor', bg: '285E6A', fg: 'FFFFF3C9' },
+    { key: 'telephone_extension', header: 'Telephone Extension', bg: '285E6A', fg: 'FFFFF3C9' },
+    { key: 'employee_name_ar', header: 'أســم الموظف بالعربية', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'email', header: 'Email', bg: '002060', fg: 'FFFFF3C9' },
+    { key: 'manager', header: 'Manager', bg: '002060', fg: 'FFFFF3C9' }
+  ];
+
   function cleanHeader(raw) {
     if (!raw) return '';
     return raw
@@ -138,14 +164,12 @@
       .toLowerCase();
   }
 
-  // Helper to convert excel date serial numbers to readable YYYY-MM-DD
   function parseExcelDate(val) {
     if (!val) return '';
     if (val instanceof Date) {
       return val.toISOString().split('T')[0];
     }
     if (typeof val === 'number') {
-      // Excel serial date starting 1899-12-30
       if (val > 10000 && val < 60000) {
         const utc_days = Math.floor(val - 25569);
         const date = new Date(utc_days * 86400 * 1000);
@@ -160,7 +184,7 @@
   }
 
   window.ExcelHandler = {
-    // Parse an uploaded File object
+    // Parse uploaded Excel file
     parseFile(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -170,17 +194,14 @@
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array', cellDates: true });
             
-            // Read first worksheet
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
             
-            // Get raw rows
             const rows = XLSX.utils.sheet_to_json(worksheet, { defval: '', raw: false });
             if (!rows || rows.length === 0) {
               return reject(new Error('الملف فارغ أو لا يحتوي على بيانات!'));
             }
 
-            // Detect headers and build normalized mapping
             const rawHeaders = Object.keys(rows[0]);
             const mapping = {};
             rawHeaders.forEach(rh => {
@@ -191,7 +212,6 @@
               }
             });
 
-            // Convert rows into DB formatted objects
             const parsedRecords = [];
             const errors = [];
 
@@ -205,7 +225,6 @@
                   let cleanedVal = val;
                   if (typeof cleanedVal === 'string') cleanedVal = cleanedVal.trim();
                   
-                  // Date fields
                   if (['start_date', 'resignation_date', 'birth_date'].includes(dbKey)) {
                     cleanedVal = parseExcelDate(cleanedVal);
                   }
@@ -217,7 +236,6 @@
                 }
               }
 
-              // Check ID
               if (!record.id && record.asd) {
                 record.id = record.asd;
               }
@@ -249,34 +267,121 @@
       });
     },
 
-    // Export an array of employee records to an Excel workbook
+    // Export to Excel with EXACT Original Headers and Color Palette
     exportToExcel(records, filename = 'Taqa_Gas_Employees.xlsx') {
       if (!records || records.length === 0) {
         alert('لا توجد بيانات لتصديرها!');
         return;
       }
 
-      // Map DB fields to Arabic/English readable headers
-      const exportRows = records.map(r => {
-        const row = {};
-        window.COLUMN_DEFINITIONS.forEach(col => {
-          row[col.label] = r[col.key] || '';
+      // Build 2D array of data (Header row + data rows)
+      const headers = EXCEL_COLUMN_CONFIG.map(col => col.header);
+      const dataRows = [headers];
+
+      records.forEach((emp, rIdx) => {
+        const row = EXCEL_COLUMN_CONFIG.map(col => {
+          let val = emp[col.key];
+          if (col.key === 'serial_no' && (!val || val === '')) {
+            val = rIdx + 1;
+          }
+          return val !== undefined && val !== null ? String(val) : '';
         });
-        return row;
+        dataRows.push(row);
       });
 
-      const worksheet = XLSX.utils.json_to_sheet(exportRows);
-      
-      // Auto column widths
-      const colWidths = window.COLUMN_DEFINITIONS.map(col => {
-        return { wch: Math.max(col.label.length * 2, 16) };
+      // Create Worksheet
+      const worksheet = XLSX.utils.aoa_to_sheet(dataRows);
+
+      // Set Row Heights: Header is 40pt, Data rows 20pt
+      worksheet['!rows'] = [
+        { hpt: 38 },
+        ...records.map(() => ({ hpt: 20 }))
+      ];
+
+      // Auto-compute column widths
+      const colWidths = EXCEL_COLUMN_CONFIG.map(col => {
+        let maxLen = Math.max(col.header.length, 12);
+        if (col.header.includes('\n')) {
+          const parts = col.header.split('\n');
+          maxLen = Math.max(...parts.map(p => p.length), 12);
+        }
+        return { wch: Math.min(Math.max(maxLen + 4, 15), 32) };
       });
       worksheet['!cols'] = colWidths;
 
+      // Apply cell styling to ALL cells (Headers + Data)
+      const range = XLSX.utils.decode_range(worksheet['!ref']);
+
+      for (let R = range.s.r; R <= range.e.r; ++R) {
+        const isHeader = (R === 0);
+
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+          const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+          if (!worksheet[cellRef]) {
+            worksheet[cellRef] = { t: 's', v: '' };
+          }
+          const cell = worksheet[cellRef];
+          const colConfig = EXCEL_COLUMN_CONFIG[C] || { bg: '002060', fg: 'FFFFF3C9' };
+
+          if (isHeader) {
+            // Header Cell Styling
+            cell.s = {
+              fill: {
+                patternType: 'solid',
+                fgColor: { rgb: colConfig.bg }
+              },
+              font: {
+                name: 'Calibri',
+                sz: 10,
+                bold: true,
+                color: { rgb: colConfig.fg }
+              },
+              alignment: {
+                horizontal: 'center',
+                vertical: 'center',
+                wrapText: true
+              },
+              border: {
+                top: { style: 'thin', color: { rgb: 'FFFFFF' } },
+                bottom: { style: 'medium', color: { rgb: 'FFFFFF' } },
+                left: { style: 'thin', color: { rgb: 'FFFFFF' } },
+                right: { style: 'thin', color: { rgb: 'FFFFFF' } }
+              }
+            };
+          } else {
+            // Data Cell Styling
+            const isEven = (R % 2 === 0);
+            const isCenterCol = ['serial_no', 'asd', 'id', 'hiring_type', 'gender', 'age', 'birth_month', 'start_date', 'resignation_date', 'status', 'floor'].includes(colConfig.key);
+
+            cell.s = {
+              fill: {
+                patternType: 'solid',
+                fgColor: { rgb: isEven ? 'F9FAFB' : 'FFFFFF' }
+              },
+              font: {
+                name: 'Calibri',
+                sz: 9.5,
+                color: { rgb: '1E293B' }
+              },
+              alignment: {
+                horizontal: isCenterCol ? 'center' : (colConfig.key === 'employee_name_ar' ? 'right' : 'left'),
+                vertical: 'center'
+              },
+              border: {
+                top: { style: 'thin', color: { rgb: 'E2E8F0' } },
+                bottom: { style: 'thin', color: { rgb: 'E2E8F0' } },
+                left: { style: 'thin', color: { rgb: 'E2E8F0' } },
+                right: { style: 'thin', color: { rgb: 'E2E8F0' } }
+              }
+            };
+          }
+        }
+      }
+
+      // Build Workbook & Trigger Download
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Employees');
 
-      // Download
       XLSX.writeFile(workbook, filename);
     }
   };
