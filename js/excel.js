@@ -1,4 +1,4 @@
-// Excel Processing and Export Utility with Exact Color & Style Formatting
+// Excel Processing and Export Utility with Exact Original Colors for Headers AND Data Rows
 (function() {
   // Mapping rules: Normalized Excel Header -> Database field key
   const HEADER_MAP = {
@@ -106,52 +106,52 @@
     'المدير المباشر': 'manager'
   };
 
-  // Exact Excel columns order & original color configuration
+  // 44 Columns Configuration matching Taqa Gas exact Excel palette (Headers + Data Rows)
   const EXCEL_COLUMN_CONFIG = [
-    { key: 'serial_no', header: 'S.', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'asd', header: 'ASD', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'hiring_type', header: 'Hiring Type', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'id', header: 'ID', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'employee_name', header: 'Employee Name', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'job_post', header: 'Job Post', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'job_title', header: 'Jop Title', bg: 'FF0000', fg: 'FFFFF3C9' },
-    { key: 'managerial_level', header: 'Mangerial Level', bg: 'FF0000', fg: 'FFFFF3C9' },
-    { key: 'job_tree', header: 'Job Tree', bg: 'FF0000', fg: 'FFFFF3C9' },
-    { key: 'company_sector', header: 'Company\n(Sector)', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'company', header: 'Company', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'costed_by_company', header: 'Costed by \n(Company)', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'costed_by_sector', header: 'Costed by \n(Sector)', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'locations', header: 'Locations', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'sub_location', header: 'Sub-Location', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'division', header: 'Division', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'department', header: 'Department', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'sub_department', header: 'Sub-Department', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'qalaa_department', header: 'Qalaa Department', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'qalaa_group_functions', header: 'Qalaa Group Functions', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'skilled_unskilled', header: 'Skilled / Unskilled \n(Second Level)', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'company_level', header: 'Company \nLevel', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'taqa_level_grade', header: 'TAQA Level (Grade)', bg: 'FF0000', fg: 'FFFFF3C9' },
-    { key: 'qalaa_job_group', header: 'Qalaa Job Group', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'start_date', header: 'Start Date', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'yoe', header: 'YOE', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'resignation_date', header: 'Resignation Date', bg: 'C00000', fg: 'FFFFF3C9' },
-    { key: 'gender', header: 'Gender', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'employment_type', header: 'Employment Type', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'type_of_contract', header: 'Type of Contract', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'birth_date', header: 'Birth Date', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'birth_month', header: 'Birth Month', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'age', header: 'Age', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'national_id', header: 'National ID', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'mobile_numbers', header: 'Mobile Numbers', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'insurance_number', header: 'Insurance Number', bg: 'FF0000', fg: 'FFFFF3C9' },
-    { key: 'bank_name', header: 'Bank Name', bg: 'FFEBEB', fg: '6C0000' },
-    { key: 'status', header: 'Status', bg: 'FFEBEB', fg: '6C0000' },
-    { key: 'account_numbers', header: 'Account Numbers', bg: 'FFEBEB', fg: '6C0000' },
-    { key: 'floor', header: 'Floor', bg: '285E6A', fg: 'FFFFF3C9' },
-    { key: 'telephone_extension', header: 'Telephone Extension', bg: '285E6A', fg: 'FFFFF3C9' },
-    { key: 'employee_name_ar', header: 'أســم الموظف بالعربية', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'email', header: 'Email', bg: '002060', fg: 'FFFFF3C9' },
-    { key: 'manager', header: 'Manager', bg: '002060', fg: 'FFFFF3C9' }
+    { key: 'serial_no', header: 'S.', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
+    { key: 'asd', header: 'ASD', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
+    { key: 'hiring_type', header: 'Hiring Type', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
+    { key: 'id', header: 'ID', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF8DD', dFg: '000000', align: 'center' },
+    { key: 'employee_name', header: 'Employee Name', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
+    { key: 'job_post', header: 'Job Post', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
+    { key: 'job_title', header: 'Jop Title', hBg: 'FF0000', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
+    { key: 'managerial_level', header: 'Mangerial Level', hBg: 'FF0000', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
+    { key: 'job_tree', header: 'Job Tree', hBg: 'FF0000', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
+    { key: 'company_sector', header: 'Company\n(Sector)', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFEB', dFg: '000000', align: 'center' },
+    { key: 'company', header: 'Company', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'A9D08E', dFg: '000000', align: 'center' }, // Light Green!
+    { key: 'costed_by_company', header: 'Costed by \n(Company)', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFEB', dFg: '000000', align: 'center' },
+    { key: 'costed_by_sector', header: 'Costed by \n(Sector)', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFEB', dFg: '000000', align: 'center' },
+    { key: 'locations', header: 'Locations', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFEB', dFg: '000000', align: 'left' },
+    { key: 'sub_location', header: 'Sub-Location', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFEB', dFg: '000000', align: 'left' },
+    { key: 'division', header: 'Division', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
+    { key: 'department', header: 'Department', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
+    { key: 'sub_department', header: 'Sub-Department', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
+    { key: 'qalaa_department', header: 'Qalaa Department', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
+    { key: 'qalaa_group_functions', header: 'Qalaa Group Functions', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
+    { key: 'skilled_unskilled', header: 'Skilled / Unskilled \n(Second Level)', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'center' },
+    { key: 'company_level', header: 'Company \nLevel', hBg: '002060', hFg: 'FFFFF3C9', dBg: '262626', dFg: '5B9BD5', align: 'center' }, // Dark charcoal + blue text
+    { key: 'taqa_level_grade', header: 'TAQA Level (Grade)', hBg: 'FF0000', hFg: 'FFFFF3C9', dBg: '262626', dFg: '5B9BD5', align: 'center' }, // Dark charcoal + blue text
+    { key: 'qalaa_job_group', header: 'Qalaa Job Group', hBg: '002060', hFg: 'FFFFF3C9', dBg: '262626', dFg: '5B9BD5', align: 'center' }, // Dark charcoal + blue text
+    { key: 'start_date', header: 'Start Date', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF9E5', dFg: '000000', align: 'center' },
+    { key: 'yoe', header: 'YOE', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'A9D08E', dFg: '000000', align: 'center' }, // Light Green!
+    { key: 'resignation_date', header: 'Resignation Date', hBg: 'C00000', hFg: 'FFFFF3C9', dBg: 'C00000', dFg: 'FFFFFF', align: 'center' }, // Solid Red!
+    { key: 'gender', header: 'Gender', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'center' },
+    { key: 'employment_type', header: 'Employment Type', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'center' },
+    { key: 'type_of_contract', header: 'Type of Contract', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
+    { key: 'birth_date', header: 'Birth Date', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF9E5', dFg: '000000', align: 'center' },
+    { key: 'birth_month', header: 'Birth Month', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF9E5', dFg: '000000', align: 'center' },
+    { key: 'age', header: 'Age', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'A9D08E', dFg: '000000', align: 'center' }, // Light Green!
+    { key: 'national_id', header: 'National ID', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF9E5', dFg: '000000', align: 'center' },
+    { key: 'mobile_numbers', header: 'Mobile Numbers', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF9E5', dFg: '000000', align: 'center' },
+    { key: 'insurance_number', header: 'Insurance Number', hBg: 'FF0000', hFg: 'FFFFF3C9', dBg: 'FFF9E5', dFg: '000000', align: 'center' },
+    { key: 'bank_name', header: 'Bank Name', hBg: 'FFEBEB', hFg: '6C0000', dBg: 'FFF7F7', dFg: '6C0000', align: 'center' }, // Soft Pink + Maroon text
+    { key: 'status', header: 'Status', hBg: 'FFEBEB', hFg: '6C0000', dBg: 'FFF7F7', dFg: '6C0000', align: 'center' },
+    { key: 'account_numbers', header: 'Account Numbers', hBg: 'FFEBEB', hFg: '6C0000', dBg: 'FFF7F7', dFg: '6C0000', align: 'center' },
+    { key: 'floor', header: 'Floor', hBg: '285E6A', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
+    { key: 'telephone_extension', header: 'Telephone Extension', hBg: '285E6A', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
+    { key: 'employee_name_ar', header: 'أســم الموظف بالعربية', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'right' },
+    { key: 'email', header: 'Email', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'left' },
+    { key: 'manager', header: 'Manager', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'left' }
   ];
 
   function cleanHeader(raw) {
@@ -267,7 +267,7 @@
       });
     },
 
-    // Export to Excel with EXACT Original Headers and Color Palette
+    // Export to Excel with EXACT Original Colors for BOTH Headers and Data Rows
     exportToExcel(records, filename = 'Taqa_Gas_Employees.xlsx') {
       if (!records || records.length === 0) {
         alert('لا توجد بيانات لتصديرها!');
@@ -292,7 +292,7 @@
       // Create Worksheet
       const worksheet = XLSX.utils.aoa_to_sheet(dataRows);
 
-      // Set Row Heights: Header is 40pt, Data rows 20pt
+      // Set Row Heights: Header is 38pt, Data rows 20pt
       worksheet['!rows'] = [
         { hpt: 38 },
         ...records.map(() => ({ hpt: 20 }))
@@ -309,7 +309,7 @@
       });
       worksheet['!cols'] = colWidths;
 
-      // Apply cell styling to ALL cells (Headers + Data)
+      // Apply cell styling to ALL cells (Headers + Data Rows)
       const range = XLSX.utils.decode_range(worksheet['!ref']);
 
       for (let R = range.s.r; R <= range.e.r; ++R) {
@@ -321,20 +321,20 @@
             worksheet[cellRef] = { t: 's', v: '' };
           }
           const cell = worksheet[cellRef];
-          const colConfig = EXCEL_COLUMN_CONFIG[C] || { bg: '002060', fg: 'FFFFF3C9' };
+          const colConfig = EXCEL_COLUMN_CONFIG[C] || { hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'left' };
 
           if (isHeader) {
-            // Header Cell Styling
+            // Header Row Styling
             cell.s = {
               fill: {
                 patternType: 'solid',
-                fgColor: { rgb: colConfig.bg }
+                fgColor: { rgb: colConfig.hBg }
               },
               font: {
                 name: 'Calibri',
                 sz: 10,
                 bold: true,
-                color: { rgb: colConfig.fg }
+                color: { rgb: colConfig.hFg }
               },
               alignment: {
                 horizontal: 'center',
@@ -349,29 +349,26 @@
               }
             };
           } else {
-            // Data Cell Styling
-            const isEven = (R % 2 === 0);
-            const isCenterCol = ['serial_no', 'asd', 'id', 'hiring_type', 'gender', 'age', 'birth_month', 'start_date', 'resignation_date', 'status', 'floor'].includes(colConfig.key);
-
+            // Data Rows Styling matching the exact company sheet color scheme!
             cell.s = {
               fill: {
                 patternType: 'solid',
-                fgColor: { rgb: isEven ? 'F9FAFB' : 'FFFFFF' }
+                fgColor: { rgb: colConfig.dBg }
               },
               font: {
                 name: 'Calibri',
                 sz: 9.5,
-                color: { rgb: '1E293B' }
+                color: { rgb: colConfig.dFg }
               },
               alignment: {
-                horizontal: isCenterCol ? 'center' : (colConfig.key === 'employee_name_ar' ? 'right' : 'left'),
+                horizontal: colConfig.align,
                 vertical: 'center'
               },
               border: {
-                top: { style: 'thin', color: { rgb: 'E2E8F0' } },
-                bottom: { style: 'thin', color: { rgb: 'E2E8F0' } },
-                left: { style: 'thin', color: { rgb: 'E2E8F0' } },
-                right: { style: 'thin', color: { rgb: 'E2E8F0' } }
+                top: { style: 'thin', color: { rgb: 'D9D9D9' } },
+                bottom: { style: 'thin', color: { rgb: 'D9D9D9' } },
+                left: { style: 'thin', color: { rgb: 'D9D9D9' } },
+                right: { style: 'thin', color: { rgb: 'D9D9D9' } }
               }
             };
           }
