@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>نظام إدارة قاعدة بيانات موظفي طاقة غاز | TAQA Gas Database</title>
+  <meta name="description" content="نظام سحابي حديث لإدارة بيانات موظفي وعقود شركة طاقة غاز مع إمكانية رفع ومزامنة وتصدير شيتات الإكسيل والتحكم الكامل في السجلات.">
+
+  <!-- Google Fonts: Cairo -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- SheetJS for Excel Reading and Writing -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand-section">
+        <div class="brand-logo-badge">
+          <i class="fa-solid fa-fire-flame-curved"></i>
+        </div>
+        <div>
+          <div class="brand-title">
+            طاقة غاز <span>TAQA Gas</span>
+          </div>
+          <div class="brand-subtitle">نظام إدارة ومزامنة قاعدة بيانات العاملين والعقود</div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="btn-open-upload" class="btn btn-accent">
+          <i class="fa-solid fa-file-excel"></i>
+          <span>رفع شيت إكسيل</span>
+        </button>
+        <button id="btn-open-add" class="btn btn-primary">
+          <i class="fa-solid fa-user-plus"></i>
+          <span>إضافة موظف جديد</span>
+        </button>
+        <button id="btn-export-excel" class="btn btn-outline">
+          <i class="fa-solid fa-download"></i>
+          <span>تصدير إكسيل</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Wrapper -->
+  <main class="main-wrapper">
+
+    <!-- Quick Statistics Grid -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-info">
+          <h3>إجمالي الموظفين المسجلين</h3>
+          <div class="stat-value" id="stat-total">0</div>
+        </div>
+        <div class="stat-icon-wrap icon-blue">
+          <i class="fa-solid fa-users"></i>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-info">
+          <h3>الموظفون على رأس العمل</h3>
+          <div class="stat-value" id="stat-active">0</div>
+        </div>
+        <div class="stat-icon-wrap icon-green">
+          <i class="fa-solid fa-user-check"></i>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-info">
+          <h3>الشركات التابعة</h3>
+          <div class="stat-value" id="stat-companies">0</div>
+        </div>
+        <div class="stat-icon-wrap icon-purple">
+          <i class="fa-solid fa-building"></i>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-info">
+          <h3>الإدارات والأقسام</h3>
+          <div class="stat-value" id="stat-departments">0</div>
+        </div>
+        <div class="stat-icon-wrap icon-amber">
+          <i class="fa-solid fa-sitemap"></i>
+        </div>
+      </div>
+    </section>
+
+    <!-- Control Panel (Search, Filters, Reset) -->
+    <section class="control-panel">
+      <div class="search-filter-row">
+        <!-- Live Search Input -->
+        <div class="search-box-wrap">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="search-input" class="search-input" placeholder="بحث بالاسم، كود الموظف، الرقم القومي، الهاتف، الإيميل...">
+        </div>
+
+        <!-- Filter: Company -->
+        <select id="filter-company" class="filter-select">
+          <option value="">جميع الشركات</option>
+        </select>
+
+        <!-- Filter: Department -->
+        <select id="filter-department" class="filter-select">
+          <option value="">جميع الإدارات</option>
+        </select>
+
+        <!-- Filter: Status -->
+        <select id="filter-status" class="filter-select">
+          <option value="">جميع الحالات</option>
+        </select>
+
+        <!-- Filter: Gender -->
+        <select id="filter-gender" class="filter-select">
+          <option value="">النوع (الكل)</option>
+          <option value="Male">ذكر (Male)</option>
+          <option value="Female">أنثى (Female)</option>
+        </select>
+
+        <!-- Reset Button -->
+        <button id="btn-reset-filters" class="btn-reset-filters" title="إعادة تعيين الفلاتر">
+          <i class="fa-solid fa-rotate-left"></i>
+          <span>إعادة ضبط</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Data Table Card -->
+    <section class="table-card">
+      <div class="table-header-info">
+        <div class="table-title">
+          <i class="fa-solid fa-table-list text-primary"></i>
+          <span>سجلات الموظفين</span>
+          <span class="badge-count" id="filtered-count">0 سجل</span>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <button id="btn-refresh" class="btn btn-secondary btn-sm" title="تحديث السجلات">
+            <i class="fa-solid fa-arrows-rotate"></i>
+            <span>تحديث</span>
+          </button>
+          <div style="font-size: 0.85rem; color: var(--text-muted);">
+            عرض:
+            <select id="page-size-select" class="form-select" style="display: inline-block; width: auto; padding: 0.25rem 0.6rem; font-size: 0.82rem;">
+              <option value="10">10</option>
+              <option value="25" selected>25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+              <option value="200">200</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table Body Container -->
+      <div class="table-responsive">
+        <table class="data-table" id="employees-table">
+          <thead>
+            <tr>
+              <th style="width: 40px; text-align: center;">#</th>
+              <th class="sortable" data-field="id">كود الموظف <i class="fa-solid fa-sort"></i></th>
+              <th class="sortable" data-field="employee_name_ar">الاسم (عربي) <i class="fa-solid fa-sort"></i></th>
+              <th class="sortable" data-field="employee_name">الاسم (EN) <i class="fa-solid fa-sort"></i></th>
+              <th class="sortable" data-field="job_title">الوظيفة / المسمى <i class="fa-solid fa-sort"></i></th>
+              <th class="sortable" data-field="company">الشركة <i class="fa-solid fa-sort"></i></th>
+              <th class="sortable" data-field="department">الإدارة <i class="fa-solid fa-sort"></i></th>
+              <th>الرقم القومي</th>
+              <th>الموبايل</th>
+              <th class="sortable" data-field="status">الحالة <i class="fa-solid fa-sort"></i></th>
+              <th class="sortable" data-field="start_date">تاريخ التعيين <i class="fa-solid fa-sort"></i></th>
+              <th style="text-align: center; width: 90px;">إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="employees-table-body">
+            <!-- Dynamic rows will be inserted here -->
+          </tbody>
+        </table>
+
+        <!-- Loading State -->
+        <div id="table-loader" class="empty-state" style="display: none;">
+          <div class="spinner"></div>
+          <p style="margin-top: 1rem; font-weight: 600;">جاري تحميل البيانات من السيرفر السحابي...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div id="table-empty" class="empty-state" style="display: none;">
+          <i class="fa-regular fa-folder-open"></i>
+          <h3>لا توجد نتائج مطابقة</h3>
+          <p>جرّب تغيير كلمات البحث أو الفلاتر، أو قم برفع شيت إكسيل جديد.</p>
+        </div>
+      </div>
+
+      <!-- Table Footer / Pagination -->
+      <div class="table-footer">
+        <div id="pagination-info" style="font-size: 0.85rem; color: var(--text-muted);">
+          عرض السجلات من 0 إلى 0 من إجمالي 0
+        </div>
+        <div class="pagination-controls" id="pagination-controls">
+          <!-- Page buttons generated dynamically -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================================== -->
+  <!-- MODAL: UPLOAD EXCEL FILE                       -->
+  <!-- ============================================== -->
+  <div class="modal-overlay" id="modal-upload">
+    <div class="modal-container" style="max-width: 650px;">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-cloud-arrow-up text-primary"></i>
+          <span>رفع وتحديث شيت إكسيل (Excel Import)</span>
+        </div>
+        <button class="modal-close-btn" data-close="modal-upload">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="dropzone" id="dropzone">
+          <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" style="display: none;">
+          <div class="dropzone-icon">
+            <i class="fa-solid fa-file-excel"></i>
+          </div>
+          <div class="dropzone-text">اضغط هنا لاختيار ملف الإكسيل أو اسحبه وأفلته هنا</div>
+          <div class="dropzone-subtext">يدعم ملفات بصيغة .xlsx, .xls (تلقائياً يتعرف على 44 حقلاً للموظفين)</div>
+        </div>
+
+        <!-- Preview Info -->
+        <div id="upload-preview" class="upload-preview" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <strong id="preview-filename" style="color: var(--navy-900); font-size: 0.95rem;">-</strong>
+            <span class="badge badge-active" id="preview-valid-count">0 موظف صالح</span>
+          </div>
+          <div id="preview-errors" style="font-size: 0.82rem; color: var(--danger); max-height: 80px; overflow-y: auto;"></div>
+        </div>
+
+        <!-- Import Strategy Selector -->
+        <div style="margin-top: 1.25rem;">
+          <label class="form-label" style="margin-bottom: 0.4rem; display: block;">طريقة المزامنة مع قاعدة البيانات:</label>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.88rem;">
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+              <input type="radio" name="sync-strategy" value="upsert" checked>
+              <span><strong>تحديث وإضافة (Upsert - موصى به):</strong> تحديث بيانات الموظف الموجود بناءً على الكود (ID) وإضافة أي موظف جديد.</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+              <input type="radio" name="sync-strategy" value="overwrite">
+              <span style="color: var(--danger);"><strong>استبدال كامل (Full Overwrite):</strong> مسح البيانات الحالية واستبدالها بالكامل ببيانات هذا الشيت.</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-container" id="upload-progress">
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.35rem;">
+            <span id="progress-text">جاري رفع البيانات إلى قاعدة البيانات السحابية...</span>
+            <span id="progress-percentage">0%</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progress-bar-fill"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close="modal-upload">إلغاء</button>
+        <button id="btn-start-upload" class="btn btn-accent" disabled>
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+          <span>بدء الرفع والمزامنة</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: ADD / EDIT EMPLOYEE                     -->
+  <!-- ============================================== -->
+  <div class="modal-overlay" id="modal-employee">
+    <div class="modal-container" style="max-width: 900px;">
+      <div class="modal-header">
+        <div class="modal-title" id="employee-modal-title">
+          <i class="fa-solid fa-user-pen text-primary"></i>
+          <span>بيانات الموظف</span>
+        </div>
+        <button class="modal-close-btn" data-close="modal-employee">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="employee-form" class="form-grid">
+
+          <!-- Section 1: الهوية والبيانات الأساسية -->
+          <div class="section-divider">
+            <i class="fa-solid fa-id-card"></i>
+            <span>البيانات الأساسية والهوية الشخصية</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label required">كود الموظف (ID)</label>
+            <input type="text" id="inp-id" name="id" class="form-input" required placeholder="مثال: 500021">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">الاسم باللغة العربية</label>
+            <input type="text" id="inp-employee_name_ar" name="employee_name_ar" class="form-input" placeholder="مثال: أحمد محمد صالح">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label required">الاسم بالإنجليزية (Name)</label>
+            <input type="text" id="inp-employee_name" name="employee_name" class="form-input" required placeholder="e.g. Ahmed Mohamed Saleh">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">الرقم القومي (National ID)</label>
+            <input type="text" id="inp-national_id" name="national_id" class="form-input" placeholder="14 رقم">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">النوع (Gender)</label>
+            <select id="inp-gender" name="gender" class="form-select">
+              <option value="">اختر...</option>
+              <option value="Male">ذكر (Male)</option>
+              <option value="Female">أنثى (Female)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">تاريخ الميلاد (Birth Date)</label>
+            <input type="date" id="inp-birth_date" name="birth_date" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">السن (Age)</label>
+            <input type="text" id="inp-age" name="age" class="form-input" placeholder="السن">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">ASD</label>
+            <input type="text" id="inp-asd" name="asd" class="form-input">
+          </div>
+
+          <!-- Section 2: الوظيفة والشركة -->
+          <div class="section-divider">
+            <i class="fa-solid fa-briefcase"></i>
+            <span>بيانات الوظيفة والشركة والتعاقد</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">الشركة (Company)</label>
+            <input type="text" id="inp-company" name="company" class="form-input" placeholder="مثال: Trans Gas">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">القطاع (Sector)</label>
+            <input type="text" id="inp-company_sector" name="company_sector" class="form-input" placeholder="مثال: LDC">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">الإدارة (Department)</label>
+            <input type="text" id="inp-department" name="department" class="form-input" placeholder="مثال: Technical">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">القسم الفرعي</label>
+            <input type="text" id="inp-sub_department" name="sub_department" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">المسمى الوظيفي (Job Post)</label>
+            <input type="text" id="inp-job_post" name="job_post" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">الوظيفة (Job Title)</label>
+            <input type="text" id="inp-job_title" name="job_title" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">الموقع (Location)</label>
+            <input type="text" id="inp-locations" name="locations" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">الموقع الفرعي (Sub-Location)</label>
+            <input type="text" id="inp-sub_location" name="sub_location" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">المستوى الإداري</label>
+            <input type="text" id="inp-managerial_level" name="managerial_level" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">درجة طاقة (TAQA Level/Grade)</label>
+            <input type="text" id="inp-taqa_level_grade" name="taqa_level_grade" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">المدير المباشر (Manager)</label>
+            <input type="text" id="inp-manager" name="manager" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">تاريخ التعيين (Start Date)</label>
+            <input type="date" id="inp-start_date" name="start_date" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">نوع العقد (Type of Contract)</label>
+            <input type="text" id="inp-type_of_contract" name="type_of_contract" class="form-input" placeholder="مثال: Permanent Contract">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">الحالة (Status)</label>
+            <input type="text" id="inp-status" name="status" class="form-input" placeholder="مثال: Personal, Active, Resigned">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">تاريخ الاستقالة (إن وجد)</label>
+            <input type="date" id="inp-resignation_date" name="resignation_date" class="form-input">
+          </div>
+
+          <!-- Section 3: التواصل والحسابات المالية -->
+          <div class="section-divider">
+            <i class="fa-solid fa-address-book"></i>
+            <span>التواصل والحسابات المالية والتأمينية</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">رقم الموبايل</label>
+            <input type="text" id="inp-mobile_numbers" name="mobile_numbers" class="form-input" placeholder="01xxxxxxxxx">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">البريد الإلكتروني (Email)</label>
+            <input type="email" id="inp-email" name="email" class="form-input" placeholder="name@taqagas.com">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">اسم البنك (Bank Name)</label>
+            <input type="text" id="inp-bank_name" name="bank_name" class="form-input" placeholder="مثال: NBE, CIB">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">رقم الحساب البنكي (Account Number)</label>
+            <input type="text" id="inp-account_numbers" name="account_numbers" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">الرقم التأميني (Insurance Number)</label>
+            <input type="text" id="inp-insurance_number" name="insurance_number" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">الدور (Floor)</label>
+            <input type="text" id="inp-floor" name="floor" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">الداخلي (Telephone Extension)</label>
+            <input type="text" id="inp-telephone_extension" name="telephone_extension" class="form-input">
+          </div>
+
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close="modal-employee">إلغاء</button>
+        <button id="btn-save-employee" class="btn btn-primary">
+          <i class="fa-solid fa-floppy-disk"></i>
+          <span>حفظ البيانات في السحابة</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: DELETE CONFIRMATION                     -->
+  <!-- ============================================== -->
+  <div class="modal-overlay" id="modal-delete">
+    <div class="modal-container" style="max-width: 480px;">
+      <div class="modal-header">
+        <div class="modal-title" style="color: var(--danger);">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span>تأكيد حذف الموظف</span>
+        </div>
+        <button class="modal-close-btn" data-close="modal-delete">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1.5rem;">
+        <p style="font-size: 0.95rem; line-height: 1.6;">
+          هل أنت متأكد من رغبتك في حذف سجل الموظف:
+          <br>
+          <strong id="delete-employee-name" style="color: var(--navy-900); font-size: 1.05rem;">-</strong>
+          (كود: <span id="delete-employee-id">-</span>)؟
+        </p>
+        <p style="margin-top: 0.75rem; font-size: 0.83rem; color: var(--danger);">
+          ⚠️ تنبيه: هذه العملية ستحذف الموظف نهائياً من قاعدة البيانات السحابية ولا يمكن التراجع عنها.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close="modal-delete">إلغاء</button>
+        <button id="btn-confirm-delete" class="btn btn-danger">
+          <i class="fa-solid fa-trash-can"></i>
+          <span>نعم، قم بالحذف</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Application Logic Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/excel.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

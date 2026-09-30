@@ -1,0 +1,9 @@
+{
+  "name": "taqa-gas-hr-database",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TAQA Gas HR Database Management System",
+  "scripts": {
+    "build": "echo 'Static site ready'"
+  }
+}
