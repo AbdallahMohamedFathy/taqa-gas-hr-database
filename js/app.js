@@ -215,8 +215,52 @@
     });
   }
 
-  // Format Status Badge
-  function renderBadgeOrText(key, val) {
+  // Helper to parse dates in DD/MM/YYYY or YYYY-MM-DD
+  function parseDateRobust(dateStr) {
+    if (!dateStr) return null;
+    const s = String(dateStr).trim();
+    if (s.includes('/')) {
+      const parts = s.split('/');
+      if (parts.length === 3) {
+        const d = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        const y = parseInt(parts[2], 10);
+        const dt = new Date(y, m, d);
+        if (!isNaN(dt.getTime())) return dt;
+      }
+    }
+    const parsed = new Date(s);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  function getCalculatedAge(birthDateStr) {
+    const d = parseDateRobust(birthDateStr);
+    if (!d) return '';
+    const now = new Date();
+    let age = now.getFullYear() - d.getFullYear();
+    const m = now.getMonth() - d.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
+    return age > 0 ? String(age) : '';
+  }
+
+  function getCalculatedYOE(startDateStr) {
+    const d = parseDateRobust(startDateStr);
+    if (!d) return '';
+    const diff = Date.now() - d.getTime();
+    if (diff <= 0) return '0';
+    return String(Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000)));
+  }
+
+  // Format Status Badge & Cell Values
+  function renderBadgeOrText(key, val, emp) {
+    // If YOE or Age are empty, calculate dynamically
+    if (key === 'yoe' && (!val || val === '') && emp && emp.start_date) {
+      val = getCalculatedYOE(emp.start_date);
+    }
+    if (key === 'age' && (!val || val === '') && emp && emp.birth_date) {
+      val = getCalculatedAge(emp.birth_date);
+    }
+
     if (!val) return '<span style="color: #cbd5e1;">-</span>';
     if (key === 'status') {
       const s = String(val).toLowerCase();
@@ -281,7 +325,7 @@
           if (!state.visibleColumns.has(col.key)) return;
 
           const val = emp[col.key];
-          cellsHtml += `<td>${renderBadgeOrText(col.key, val)}</td>`;
+          cellsHtml += `<td>${renderBadgeOrText(col.key, val, emp)}</td>`;
         });
 
         return `<tr data-id="${emp.id}">${cellsHtml}</tr>`;

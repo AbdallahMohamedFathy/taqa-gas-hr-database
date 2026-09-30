@@ -1,4 +1,4 @@
-// Excel Processing and Export Utility with Exact Original Colors for Headers AND Data Rows
+// Excel Processing and Export Utility with Exact Original Colors & Smart Formula Evaluation
 (function() {
   // Mapping rules: Normalized Excel Header -> Database field key
   const HEADER_MAP = {
@@ -118,7 +118,7 @@
     { key: 'managerial_level', header: 'Mangerial Level', hBg: 'FF0000', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
     { key: 'job_tree', header: 'Job Tree', hBg: 'FF0000', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
     { key: 'company_sector', header: 'Company\n(Sector)', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFEB', dFg: '000000', align: 'center' },
-    { key: 'company', header: 'Company', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'A9D08E', dFg: '000000', align: 'center' }, // Light Green!
+    { key: 'company', header: 'Company', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'A9D08E', dFg: '000000', align: 'center' },
     { key: 'costed_by_company', header: 'Costed by \n(Company)', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFEB', dFg: '000000', align: 'center' },
     { key: 'costed_by_sector', header: 'Costed by \n(Sector)', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFEB', dFg: '000000', align: 'center' },
     { key: 'locations', header: 'Locations', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFEB', dFg: '000000', align: 'left' },
@@ -129,22 +129,22 @@
     { key: 'qalaa_department', header: 'Qalaa Department', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
     { key: 'qalaa_group_functions', header: 'Qalaa Group Functions', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
     { key: 'skilled_unskilled', header: 'Skilled / Unskilled \n(Second Level)', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'center' },
-    { key: 'company_level', header: 'Company \nLevel', hBg: '002060', hFg: 'FFFFF3C9', dBg: '262626', dFg: '5B9BD5', align: 'center' }, // Dark charcoal + blue text
-    { key: 'taqa_level_grade', header: 'TAQA Level (Grade)', hBg: 'FF0000', hFg: 'FFFFF3C9', dBg: '262626', dFg: '5B9BD5', align: 'center' }, // Dark charcoal + blue text
-    { key: 'qalaa_job_group', header: 'Qalaa Job Group', hBg: '002060', hFg: 'FFFFF3C9', dBg: '262626', dFg: '5B9BD5', align: 'center' }, // Dark charcoal + blue text
+    { key: 'company_level', header: 'Company \nLevel', hBg: '002060', hFg: 'FFFFF3C9', dBg: '262626', dFg: '5B9BD5', align: 'center' },
+    { key: 'taqa_level_grade', header: 'TAQA Level (Grade)', hBg: 'FF0000', hFg: 'FFFFF3C9', dBg: '262626', dFg: '5B9BD5', align: 'center' },
+    { key: 'qalaa_job_group', header: 'Qalaa Job Group', hBg: '002060', hFg: 'FFFFF3C9', dBg: '262626', dFg: '5B9BD5', align: 'center' },
     { key: 'start_date', header: 'Start Date', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF9E5', dFg: '000000', align: 'center' },
-    { key: 'yoe', header: 'YOE', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'A9D08E', dFg: '000000', align: 'center' }, // Light Green!
-    { key: 'resignation_date', header: 'Resignation Date', hBg: 'C00000', hFg: 'FFFFF3C9', dBg: 'C00000', dFg: 'FFFFFF', align: 'center' }, // Solid Red!
+    { key: 'yoe', header: 'YOE', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'A9D08E', dFg: '000000', align: 'center' },
+    { key: 'resignation_date', header: 'Resignation Date', hBg: 'C00000', hFg: 'FFFFF3C9', dBg: 'C00000', dFg: 'FFFFFF', align: 'center' },
     { key: 'gender', header: 'Gender', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'center' },
     { key: 'employment_type', header: 'Employment Type', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'center' },
     { key: 'type_of_contract', header: 'Type of Contract', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
     { key: 'birth_date', header: 'Birth Date', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF9E5', dFg: '000000', align: 'center' },
     { key: 'birth_month', header: 'Birth Month', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF9E5', dFg: '000000', align: 'center' },
-    { key: 'age', header: 'Age', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'A9D08E', dFg: '000000', align: 'center' }, // Light Green!
+    { key: 'age', header: 'Age', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'A9D08E', dFg: '000000', align: 'center' },
     { key: 'national_id', header: 'National ID', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF9E5', dFg: '000000', align: 'center' },
     { key: 'mobile_numbers', header: 'Mobile Numbers', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF9E5', dFg: '000000', align: 'center' },
     { key: 'insurance_number', header: 'Insurance Number', hBg: 'FF0000', hFg: 'FFFFF3C9', dBg: 'FFF9E5', dFg: '000000', align: 'center' },
-    { key: 'bank_name', header: 'Bank Name', hBg: 'FFEBEB', hFg: '6C0000', dBg: 'FFF7F7', dFg: '6C0000', align: 'center' }, // Soft Pink + Maroon text
+    { key: 'bank_name', header: 'Bank Name', hBg: 'FFEBEB', hFg: '6C0000', dBg: 'FFF7F7', dFg: '6C0000', align: 'center' },
     { key: 'status', header: 'Status', hBg: 'FFEBEB', hFg: '6C0000', dBg: 'FFF7F7', dFg: '6C0000', align: 'center' },
     { key: 'account_numbers', header: 'Account Numbers', hBg: 'FFEBEB', hFg: '6C0000', dBg: 'FFF7F7', dFg: '6C0000', align: 'center' },
     { key: 'floor', header: 'Floor', hBg: '285E6A', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
@@ -181,6 +181,55 @@
       return str.replace(' 00:00:00', '');
     }
     return str;
+  }
+
+  // Robust date parser supporting DD/MM/YYYY, YYYY-MM-DD, and Date objects
+  function parseDateRobust(dateStr) {
+    if (!dateStr) return null;
+    if (dateStr instanceof Date) return dateStr;
+    const s = String(dateStr).trim();
+    if (s.includes('/')) {
+      const parts = s.split('/');
+      if (parts.length === 3) {
+        const d = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        const y = parseInt(parts[2], 10);
+        const dt = new Date(y, m, d);
+        if (!isNaN(dt.getTime())) return dt;
+      }
+    }
+    const parsed = new Date(s);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  // Helper to calculate Age from Birth Date
+  function calculateAge(birthDateStr) {
+    const d = parseDateRobust(birthDateStr);
+    if (!d) return '';
+    const now = new Date();
+    let age = now.getFullYear() - d.getFullYear();
+    const m = now.getMonth() - d.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < d.getDate())) {
+      age--;
+    }
+    return age > 0 ? String(age) : '';
+  }
+
+  // Helper to calculate Years of Experience (YOE) from Start Date
+  function calculateYOE(startDateStr) {
+    const d = parseDateRobust(startDateStr);
+    if (!d) return '';
+    const diff = Date.now() - d.getTime();
+    if (diff <= 0) return '0';
+    const years = diff / (365.25 * 24 * 60 * 60 * 1000);
+    return String(Math.floor(years));
+  }
+
+  // Helper to extract Birth Month
+  function calculateBirthMonth(birthDateStr) {
+    const d = parseDateRobust(birthDateStr);
+    if (!d) return '';
+    return String(d.getMonth() + 1);
   }
 
   window.ExcelHandler = {
@@ -223,7 +272,13 @@
                 const dbKey = mapping[rawKey];
                 if (dbKey) {
                   let cleanedVal = val;
-                  if (typeof cleanedVal === 'string') cleanedVal = cleanedVal.trim();
+                  if (typeof cleanedVal === 'string') {
+                    cleanedVal = cleanedVal.trim();
+                    // Clean out Excel errors like #VALUE!, #REF!, #NAME? or raw formula strings
+                    if (cleanedVal.includes('#VALUE!') || cleanedVal.includes('#REF!') || cleanedVal.startsWith('=')) {
+                      cleanedVal = '';
+                    }
+                  }
                   
                   if (['start_date', 'resignation_date', 'birth_date'].includes(dbKey)) {
                     cleanedVal = parseExcelDate(cleanedVal);
@@ -234,6 +289,25 @@
                     hasAnyData = true;
                   }
                 }
+              }
+
+              // SMART FORMULA EVALUATION: If YOE or Age or Month are empty or were #VALUE! in Excel:
+              // Calculate YOE automatically from Start Date
+              if ((!record.yoe || record.yoe === '') && record.start_date) {
+                record.yoe = calculateYOE(record.start_date);
+                if (record.yoe) hasAnyData = true;
+              }
+
+              // Calculate Age automatically from Birth Date
+              if ((!record.age || record.age === '') && record.birth_date) {
+                record.age = calculateAge(record.birth_date);
+                if (record.age) hasAnyData = true;
+              }
+
+              // Calculate Birth Month automatically from Birth Date
+              if ((!record.birth_month || record.birth_month === '') && record.birth_date) {
+                record.birth_month = calculateBirthMonth(record.birth_date);
+                if (record.birth_month) hasAnyData = true;
               }
 
               if (!record.id && record.asd) {
@@ -281,9 +355,21 @@
       records.forEach((emp, rIdx) => {
         const row = EXCEL_COLUMN_CONFIG.map(col => {
           let val = emp[col.key];
+
+          // Auto-fill calculated values if empty
           if (col.key === 'serial_no' && (!val || val === '')) {
             val = rIdx + 1;
           }
+          if (col.key === 'yoe' && (!val || val === '') && emp.start_date) {
+            val = calculateYOE(emp.start_date);
+          }
+          if (col.key === 'age' && (!val || val === '') && emp.birth_date) {
+            val = calculateAge(emp.birth_date);
+          }
+          if (col.key === 'birth_month' && (!val || val === '') && emp.birth_date) {
+            val = calculateBirthMonth(emp.birth_date);
+          }
+
           return val !== undefined && val !== null ? String(val) : '';
         });
         dataRows.push(row);
