@@ -36,7 +36,7 @@
           <div class="brand-title">
             طاقة غاز <span>TAQA Gas</span>
           </div>
-          <div class="brand-subtitle">نظام إدارة ومزامنة قاعدة بيانات العاملين والعقود</div>
+          <div class="brand-subtitle">نظام إدارة ومزامنة قاعدة بيانات العاملين والعقود (44 حقلاً كاملاً)</div>
         </div>
       </div>
 
@@ -109,7 +109,7 @@
         <!-- Live Search Input -->
         <div class="search-box-wrap">
           <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="text" id="search-input" class="search-input" placeholder="بحث بالاسم، كود الموظف، الرقم القومي، الهاتف، الإيميل...">
+          <input type="text" id="search-input" class="search-input" placeholder="بحث شامل: كود الموظف، الاسم، الرقم القومي، الموبايل، الإيميل، الوظيفة...">
         </div>
 
         <!-- Filter: Company -->
@@ -147,18 +147,23 @@
       <div class="table-header-info">
         <div class="table-title">
           <i class="fa-solid fa-table-list text-primary"></i>
-          <span>سجلات الموظفين</span>
+          <span>سجلات الموظفين الكاملة</span>
           <span class="badge-count" id="filtered-count">0 سجل</span>
+          <span class="columns-badge"><i class="fa-solid fa-columns"></i> 44 عموداً معروضاً</span>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap;">
+          <button id="btn-open-columns" class="btn btn-secondary btn-sm" title="اختيار الأعمدة المعروضة">
+            <i class="fa-solid fa-sliders"></i>
+            <span>تخصيص الأعمدة</span>
+          </button>
           <button id="btn-refresh" class="btn btn-secondary btn-sm" title="تحديث السجلات">
             <i class="fa-solid fa-arrows-rotate"></i>
             <span>تحديث</span>
           </button>
           <div style="font-size: 0.85rem; color: var(--text-muted);">
             عرض:
-            <select id="page-size-select" class="form-select" style="display: inline-block; width: auto; padding: 0.25rem 0.6rem; font-size: 0.82rem;">
+            <select id="page-size-select" class="form-select" style="display: inline-block; width: auto; padding: 0.25rem 0.5rem; font-size: 0.82rem;">
               <option value="10">10</option>
               <option value="25" selected>25</option>
               <option value="50">50</option>
@@ -173,19 +178,8 @@
       <div class="table-responsive">
         <table class="data-table" id="employees-table">
           <thead>
-            <tr>
-              <th style="width: 40px; text-align: center;">#</th>
-              <th class="sortable" data-field="id">كود الموظف <i class="fa-solid fa-sort"></i></th>
-              <th class="sortable" data-field="employee_name_ar">الاسم (عربي) <i class="fa-solid fa-sort"></i></th>
-              <th class="sortable" data-field="employee_name">الاسم (EN) <i class="fa-solid fa-sort"></i></th>
-              <th class="sortable" data-field="job_title">الوظيفة / المسمى <i class="fa-solid fa-sort"></i></th>
-              <th class="sortable" data-field="company">الشركة <i class="fa-solid fa-sort"></i></th>
-              <th class="sortable" data-field="department">الإدارة <i class="fa-solid fa-sort"></i></th>
-              <th>الرقم القومي</th>
-              <th>الموبايل</th>
-              <th class="sortable" data-field="status">الحالة <i class="fa-solid fa-sort"></i></th>
-              <th class="sortable" data-field="start_date">تاريخ التعيين <i class="fa-solid fa-sort"></i></th>
-              <th style="text-align: center; width: 90px;">إجراءات</th>
+            <tr id="employees-table-head-row">
+              <!-- Dynamically populated from COLUMN_DEFINITIONS with sticky actions -->
             </tr>
           </thead>
           <tbody id="employees-table-body">
@@ -219,6 +213,36 @@
     </section>
 
   </main>
+
+  <!-- ============================================== -->
+  <!-- MODAL: COLUMN VISIBILITY PICKER                -->
+  <!-- ============================================== -->
+  <div class="modal-overlay" id="modal-columns">
+    <div class="modal-container" style="max-width: 750px;">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-sliders text-primary"></i>
+          <span>تخصيص عرض الأعمدة (44 عموداً)</span>
+        </div>
+        <button class="modal-close-btn" data-close="modal-columns">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+          <span style="font-size: 0.85rem; color: var(--text-muted);">يمكنك اختيار الأعمدة التي ترغب في إظهارها أو إخفائها من الجدول:</span>
+          <div style="display: flex; gap: 0.5rem;">
+            <button id="btn-select-all-cols" class="btn btn-secondary btn-sm">تحديد الكل</button>
+            <button id="btn-reset-cols" class="btn btn-secondary btn-sm">الوضع الافتراضي</button>
+          </div>
+        </div>
+        <div class="columns-picker-grid" id="columns-picker-container">
+          <!-- Dynamically generated checkboxes -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" data-close="modal-columns">تم وتطبيق</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ============================================== -->
   <!-- MODAL: UPLOAD EXCEL FILE                       -->
@@ -314,13 +338,28 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">الاسم باللغة العربية</label>
-            <input type="text" id="inp-employee_name_ar" name="employee_name_ar" class="form-input" placeholder="مثال: أحمد محمد صالح">
+            <label class="form-label">مسلسل (S.)</label>
+            <input type="text" id="inp-serial_no" name="serial_no" class="form-input">
           </div>
 
           <div class="form-group">
-            <label class="form-label required">الاسم بالإنجليزية (Name)</label>
+            <label class="form-label">ASD</label>
+            <input type="text" id="inp-asd" name="asd" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">نوع التعيين (Hiring Type)</label>
+            <input type="text" id="inp-hiring_type" name="hiring_type" class="form-input" placeholder="DH">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label required">الاسم بالإنجليزية (Employee Name)</label>
             <input type="text" id="inp-employee_name" name="employee_name" class="form-input" required placeholder="e.g. Ahmed Mohamed Saleh">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">الاسم باللغة العربية</label>
+            <input type="text" id="inp-employee_name_ar" name="employee_name_ar" class="form-input" placeholder="مثال: أحمد محمد صالح">
           </div>
 
           <div class="form-group">
@@ -343,13 +382,13 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">السن (Age)</label>
-            <input type="text" id="inp-age" name="age" class="form-input" placeholder="السن">
+            <label class="form-label">شهر الميلاد (Birth Month)</label>
+            <input type="text" id="inp-birth_month" name="birth_month" class="form-input">
           </div>
 
           <div class="form-group">
-            <label class="form-label">ASD</label>
-            <input type="text" id="inp-asd" name="asd" class="form-input">
+            <label class="form-label">السن (Age)</label>
+            <input type="text" id="inp-age" name="age" class="form-input" placeholder="السن">
           </div>
 
           <!-- Section 2: الوظيفة والشركة -->
@@ -359,37 +398,47 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">الشركة (Company)</label>
-            <input type="text" id="inp-company" name="company" class="form-input" placeholder="مثال: Trans Gas">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">القطاع (Sector)</label>
-            <input type="text" id="inp-company_sector" name="company_sector" class="form-input" placeholder="مثال: LDC">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">الإدارة (Department)</label>
-            <input type="text" id="inp-department" name="department" class="form-input" placeholder="مثال: Technical">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">القسم الفرعي</label>
-            <input type="text" id="inp-sub_department" name="sub_department" class="form-input">
-          </div>
-
-          <div class="form-group">
             <label class="form-label">المسمى الوظيفي (Job Post)</label>
             <input type="text" id="inp-job_post" name="job_post" class="form-input">
           </div>
 
           <div class="form-group">
-            <label class="form-label">الوظيفة (Job Title)</label>
+            <label class="form-label">الوظيفة (Jop Title)</label>
             <input type="text" id="inp-job_title" name="job_title" class="form-input">
           </div>
 
           <div class="form-group">
-            <label class="form-label">الموقع (Location)</label>
+            <label class="form-label">المستوى الإداري (Managerial Level)</label>
+            <input type="text" id="inp-managerial_level" name="managerial_level" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">شجرة الوظائف (Job Tree)</label>
+            <input type="text" id="inp-job_tree" name="job_tree" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">الشركة (Company)</label>
+            <input type="text" id="inp-company" name="company" class="form-input" placeholder="مثال: Trans Gas">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">القطاع (Company Sector)</label>
+            <input type="text" id="inp-company_sector" name="company_sector" class="form-input" placeholder="مثال: LDC">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">التكلفة على الشركة (Costed by Company)</label>
+            <input type="text" id="inp-costed_by_company" name="costed_by_company" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">التكلفة على القطاع (Costed by Sector)</label>
+            <input type="text" id="inp-costed_by_sector" name="costed_by_sector" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">الموقع (Locations)</label>
             <input type="text" id="inp-locations" name="locations" class="form-input">
           </div>
 
@@ -399,8 +448,38 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">المستوى الإداري</label>
-            <input type="text" id="inp-managerial_level" name="managerial_level" class="form-input">
+            <label class="form-label">القطاع العام (Division)</label>
+            <input type="text" id="inp-division" name="division" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">الإدارة (Department)</label>
+            <input type="text" id="inp-department" name="department" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">القسم الفرعي (Sub-Department)</label>
+            <input type="text" id="inp-sub_department" name="sub_department" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">إدارة القلعة (Qalaa Department)</label>
+            <input type="text" id="inp-qalaa_department" name="qalaa_department" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">وظائف القلعة (Qalaa Group Functions)</label>
+            <input type="text" id="inp-qalaa_group_functions" name="qalaa_group_functions" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">المهارة (Skilled / Unskilled)</label>
+            <input type="text" id="inp-skilled_unskilled" name="skilled_unskilled" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">مستوى الشركة (Company Level)</label>
+            <input type="text" id="inp-company_level" name="company_level" class="form-input">
           </div>
 
           <div class="form-group">
@@ -409,13 +488,23 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">المدير المباشر (Manager)</label>
-            <input type="text" id="inp-manager" name="manager" class="form-input">
+            <label class="form-label">مجموعة القلعة (Qalaa Job Group)</label>
+            <input type="text" id="inp-qalaa_job_group" name="qalaa_job_group" class="form-input">
           </div>
 
           <div class="form-group">
             <label class="form-label">تاريخ التعيين (Start Date)</label>
             <input type="date" id="inp-start_date" name="start_date" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">سنوات الخبرة (YOE)</label>
+            <input type="text" id="inp-yoe" name="yoe" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">نوع التوظيف (Employment Type)</label>
+            <input type="text" id="inp-employment_type" name="employment_type" class="form-input">
           </div>
 
           <div class="form-group">
@@ -425,12 +514,17 @@
 
           <div class="form-group">
             <label class="form-label">الحالة (Status)</label>
-            <input type="text" id="inp-status" name="status" class="form-input" placeholder="مثال: Personal, Active, Resigned">
+            <input type="text" id="inp-status" name="status" class="form-input" placeholder="Personal, Active, Resigned">
           </div>
 
           <div class="form-group">
-            <label class="form-label">تاريخ الاستقالة (إن وجد)</label>
+            <label class="form-label">تاريخ الاستقالة (Resignation Date)</label>
             <input type="date" id="inp-resignation_date" name="resignation_date" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">المدير المباشر (Manager)</label>
+            <input type="text" id="inp-manager" name="manager" class="form-input">
           </div>
 
           <!-- Section 3: التواصل والحسابات المالية -->
@@ -440,28 +534,23 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">رقم الموبايل</label>
-            <input type="text" id="inp-mobile_numbers" name="mobile_numbers" class="form-input" placeholder="01xxxxxxxxx">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">البريد الإلكتروني (Email)</label>
-            <input type="email" id="inp-email" name="email" class="form-input" placeholder="name@taqagas.com">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">اسم البنك (Bank Name)</label>
-            <input type="text" id="inp-bank_name" name="bank_name" class="form-input" placeholder="مثال: NBE, CIB">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">رقم الحساب البنكي (Account Number)</label>
-            <input type="text" id="inp-account_numbers" name="account_numbers" class="form-input">
+            <label class="form-label">رقم الموبايل (Mobile Numbers)</label>
+            <input type="text" id="inp-mobile_numbers" name="mobile_numbers" class="form-input">
           </div>
 
           <div class="form-group">
             <label class="form-label">الرقم التأميني (Insurance Number)</label>
             <input type="text" id="inp-insurance_number" name="insurance_number" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">اسم البنك (Bank Name)</label>
+            <input type="text" id="inp-bank_name" name="bank_name" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">رقم الحساب البنكي (Account Numbers)</label>
+            <input type="text" id="inp-account_numbers" name="account_numbers" class="form-input">
           </div>
 
           <div class="form-group">
@@ -472,6 +561,11 @@
           <div class="form-group">
             <label class="form-label">الداخلي (Telephone Extension)</label>
             <input type="text" id="inp-telephone_extension" name="telephone_extension" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">البريد الإلكتروني (Email)</label>
+            <input type="email" id="inp-email" name="email" class="form-input">
           </div>
 
         </form>

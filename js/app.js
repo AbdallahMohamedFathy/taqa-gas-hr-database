@@ -16,7 +16,9 @@
     totalRecords: 0,
     parsedExcelData: null,
     deletingEmployeeId: null,
-    editingEmployeeId: null
+    editingEmployeeId: null,
+    // Column visibility set
+    visibleColumns: new Set(window.COLUMN_DEFINITIONS.map(c => c.key))
   };
 
   // DOM Elements Cache
@@ -38,6 +40,7 @@
     btnRefresh: document.getElementById('btn-refresh'),
 
     // Table
+    tableHeadRow: document.getElementById('employees-table-head-row'),
     tableBody: document.getElementById('employees-table-body'),
     tableLoader: document.getElementById('table-loader'),
     tableEmpty: document.getElementById('table-empty'),
@@ -49,9 +52,16 @@
     modalUpload: document.getElementById('modal-upload'),
     modalEmployee: document.getElementById('modal-employee'),
     modalDelete: document.getElementById('modal-delete'),
+    modalColumns: document.getElementById('modal-columns'),
     btnOpenUpload: document.getElementById('btn-open-upload'),
     btnOpenAdd: document.getElementById('btn-open-add'),
+    btnOpenColumns: document.getElementById('btn-open-columns'),
     btnExportExcel: document.getElementById('btn-export-excel'),
+
+    // Column Picker
+    columnsPickerContainer: document.getElementById('columns-picker-container'),
+    btnSelectAllCols: document.getElementById('btn-select-all-cols'),
+    btnResetCols: document.getElementById('btn-reset-cols'),
 
     // Upload Elements
     dropzone: document.getElementById('dropzone'),
@@ -113,7 +123,6 @@
     modalEl.classList.remove('active');
   }
 
-  // Attach modal close handlers
   document.querySelectorAll('[data-close]').forEach(btn => {
     btn.addEventListener('click', () => {
       const targetId = btn.getAttribute('data-close');
@@ -122,8 +131,8 @@
     });
   });
 
-  // Close modal when clicking outside container
-  [els.modalUpload, els.modalEmployee, els.modalDelete].forEach(modal => {
+  [els.modalUpload, els.modalEmployee, els.modalDelete, els.modalColumns].forEach(modal => {
+    if (!modal) return;
     modal.addEventListener('click', (e) => {
       if (e.target === modal) closeModal(modal);
     });
@@ -142,20 +151,17 @@
     }
   }
 
-  // Load filter options into select elements
+  // Load filter options
   async function loadFilterOptions() {
     try {
       const options = await API.getFilterOptions();
 
-      // Populate companies
       els.filterCompany.innerHTML = '<option value="">جميع الشركات</option>' +
         options.companies.map(c => `<option value="${c}">${c}</option>`).join('');
 
-      // Populate departments
       els.filterDepartment.innerHTML = '<option value="">جميع الإدارات</option>' +
         options.departments.map(d => `<option value="${d}">${d}</option>`).join('');
 
-      // Populate statuses
       els.filterStatus.innerHTML = '<option value="">جميع الحالات</option>' +
         options.statuses.map(s => `<option value="${s}">${s}</option>`).join('');
     } catch (err) {
@@ -163,20 +169,69 @@
     }
   }
 
-  // Format status badge helper
-  function renderStatusBadge(status) {
-    if (!status) return '<span class="badge badge-neutral">-</span>';
-    const s = status.toLowerCase();
-    if (s.includes('active') || s.includes('شغال') || s.includes('قائم')) {
-      return `<span class="badge badge-active">${status}</span>`;
+  // Render Table Headers Dynamically
+  function renderTableHeaders() {
+    let html = `
+      <th class="sticky-action">إجراءات</th>
+      <th class="sticky-id sortable" data-field="id">
+        <span>كود ID</span>
+        <i class="fa-solid fa-sort"></i>
+      </th>
+    `;
+
+    window.COLUMN_DEFINITIONS.forEach(col => {
+      if (col.key === 'id') return; // ID is already sticky on the right
+      if (!state.visibleColumns.has(col.key)) return;
+
+      const isCurrentSort = state.sortField === col.key;
+      const sortIcon = isCurrentSort 
+        ? (state.sortAsc ? 'fa-sort-up' : 'fa-sort-down') 
+        : 'fa-sort';
+
+      html += `
+        <th class="sortable" data-field="${col.key}" title="${col.label}">
+          <span>${col.label}</span>
+          <i class="fa-solid ${sortIcon}"></i>
+        </th>
+      `;
+    });
+
+    els.tableHeadRow.innerHTML = html;
+
+    // Attach click events for sorting
+    els.tableHeadRow.querySelectorAll('th.sortable').forEach(th => {
+      th.addEventListener('click', () => {
+        const field = th.getAttribute('data-field');
+        if (state.sortField === field) {
+          state.sortAsc = !state.sortAsc;
+        } else {
+          state.sortField = field;
+          state.sortAsc = true;
+        }
+        renderTableHeaders();
+        state.page = 1;
+        loadEmployeesTable();
+      });
+    });
+  }
+
+  // Format Status Badge
+  function renderBadgeOrText(key, val) {
+    if (!val) return '<span style="color: #cbd5e1;">-</span>';
+    if (key === 'status') {
+      const s = String(val).toLowerCase();
+      if (s.includes('active') || s.includes('شغال') || s.includes('قائم')) {
+        return `<span class="badge badge-active">${val}</span>`;
+      }
+      if (s.includes('resigned') || s.includes('مستقيل')) {
+        return `<span class="badge badge-resigned">${val}</span>`;
+      }
+      if (s.includes('personal') || s.includes('خاص')) {
+        return `<span class="badge badge-personal">${val}</span>`;
+      }
+      return `<span class="badge badge-neutral">${val}</span>`;
     }
-    if (s.includes('resigned') || s.includes('مستقيل')) {
-      return `<span class="badge badge-resigned">${status}</span>`;
-    }
-    if (s.includes('personal') || s.includes('خاص')) {
-      return `<span class="badge badge-personal">${status}</span>`;
-    }
-    return `<span class="badge badge-neutral">${status}</span>`;
+    return String(val);
   }
 
   // Fetch and Render Table Data
@@ -197,7 +252,6 @@
 
       els.tableLoader.style.display = 'none';
       state.totalRecords = result.totalCount;
-
       els.filteredCount.textContent = `${result.totalCount.toLocaleString('ar-EG')} سجل`;
 
       if (result.data.length === 0) {
@@ -207,36 +261,30 @@
       }
 
       // Render Rows
-      const rowsHtml = result.data.map((emp, index) => {
-        const rowNum = (state.page - 1) * state.pageSize + index + 1;
-        return `
-          <tr data-id="${emp.id}">
-            <td style="text-align: center; color: var(--text-light); font-size: 0.8rem;">${rowNum}</td>
-            <td style="font-weight: 700; color: var(--primary-hover); font-family: monospace; font-size: 0.95rem;">${emp.id || '-'}</td>
-            <td style="font-weight: 600;">${emp.employee_name_ar || '-'}</td>
-            <td>${emp.employee_name || '-'}</td>
-            <td>
-              <div style="font-weight: 600;">${emp.job_title || emp.job_post || '-'}</div>
-              ${emp.job_post && emp.job_title && emp.job_post !== emp.job_title ? `<div style="font-size: 0.78rem; color: var(--text-muted);">${emp.job_post}</div>` : ''}
-            </td>
-            <td><span class="badge badge-neutral">${emp.company || '-'}</span></td>
-            <td>${emp.department || '-'}</td>
-            <td style="font-family: monospace; font-size: 0.85rem;">${emp.national_id || '-'}</td>
-            <td style="font-family: monospace; font-size: 0.85rem;">${emp.mobile_numbers || '-'}</td>
-            <td>${renderStatusBadge(emp.status)}</td>
-            <td style="font-size: 0.82rem; color: var(--text-muted);">${emp.start_date || '-'}</td>
-            <td>
-              <div class="row-actions">
-                <button class="action-btn btn-edit" title="تعديل الموظف" onclick="window.editEmployee('${emp.id}')">
-                  <i class="fa-solid fa-pen-to-square"></i>
-                </button>
-                <button class="action-btn btn-delete" title="حذف الموظف" onclick="window.confirmDeleteEmployee('${emp.id}', '${(emp.employee_name_ar || emp.employee_name || '').replace(/'/g, "\\'")}')">
-                  <i class="fa-solid fa-trash-can"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
+      const rowsHtml = result.data.map((emp) => {
+        let cellsHtml = `
+          <td class="sticky-action">
+            <div class="row-actions">
+              <button class="action-btn btn-edit" title="تعديل الموظف" onclick="window.editEmployee('${emp.id}')">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+              <button class="action-btn btn-delete" title="حذف الموظف" onclick="window.confirmDeleteEmployee('${emp.id}', '${(emp.employee_name_ar || emp.employee_name || '').replace(/'/g, "\\'")}')">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          </td>
+          <td class="sticky-id">${emp.id || '-'}</td>
         `;
+
+        window.COLUMN_DEFINITIONS.forEach(col => {
+          if (col.key === 'id') return; // Handled in sticky column
+          if (!state.visibleColumns.has(col.key)) return;
+
+          const val = emp[col.key];
+          cellsHtml += `<td>${renderBadgeOrText(col.key, val)}</td>`;
+        });
+
+        return `<tr data-id="${emp.id}">${cellsHtml}</tr>`;
       }).join('');
 
       els.tableBody.innerHTML = rowsHtml;
@@ -263,11 +311,9 @@
 
     let pagesHtml = '';
 
-    // First & Prev
     pagesHtml += `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="window.goToPage(1)" title="الصفحة الأولى"><i class="fa-solid fa-angles-right"></i></button>`;
     pagesHtml += `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="window.goToPage(${currentPage - 1})" title="السابق"><i class="fa-solid fa-angle-right"></i></button>`;
 
-    // Page numbers with smart window
     let startPage = Math.max(1, currentPage - 2);
     let endPage = Math.min(totalPages, currentPage + 2);
 
@@ -275,43 +321,16 @@
       pagesHtml += `<button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="window.goToPage(${p})">${p}</button>`;
     }
 
-    // Next & Last
     pagesHtml += `<button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="window.goToPage(${currentPage + 1})" title="التالي"><i class="fa-solid fa-angle-left"></i></button>`;
     pagesHtml += `<button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="window.goToPage(${totalPages})" title="الصفحة الأخيرة"><i class="fa-solid fa-angles-left"></i></button>`;
 
     els.paginationControls.innerHTML = pagesHtml;
   }
 
-  // Pagination navigation helper
   window.goToPage = function(pageNumber) {
     state.page = pageNumber;
     loadEmployeesTable();
   };
-
-  // Sorting Handler
-  document.querySelectorAll('table.data-table th.sortable').forEach(th => {
-    th.addEventListener('click', () => {
-      const field = th.getAttribute('data-field');
-      if (state.sortField === field) {
-        state.sortAsc = !state.sortAsc;
-      } else {
-        state.sortField = field;
-        state.sortAsc = true;
-      }
-
-      // Update icons
-      document.querySelectorAll('table.data-table th.sortable i').forEach(icon => {
-        icon.className = 'fa-solid fa-sort';
-      });
-      const icon = th.querySelector('i');
-      if (icon) {
-        icon.className = state.sortAsc ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down';
-      }
-
-      state.page = 1;
-      loadEmployeesTable();
-    });
-  });
 
   // Debounced Live Search
   let searchTimeout = null;
@@ -366,10 +385,57 @@
   });
 
   // ==========================================
+  // COLUMN PICKER WORKFLOW
+  // ==========================================
+  function initColumnPicker() {
+    els.columnsPickerContainer.innerHTML = window.COLUMN_DEFINITIONS.map(col => {
+      const isChecked = state.visibleColumns.has(col.key);
+      const isLocked = col.key === 'id'; // ID is always visible
+      return `
+        <label class="column-checkbox-card">
+          <input type="checkbox" value="${col.key}" ${isChecked ? 'checked' : ''} ${isLocked ? 'disabled' : ''}>
+          <span><strong>${col.label}</strong> ${col.labelAr ? `<span style="color: var(--text-muted); font-size: 0.76rem;">(${col.labelAr})</span>` : ''}</span>
+        </label>
+      `;
+    }).join('');
+
+    els.columnsPickerContainer.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+      chk.addEventListener('change', (e) => {
+        const key = e.target.value;
+        if (e.target.checked) {
+          state.visibleColumns.add(key);
+        } else {
+          state.visibleColumns.delete(key);
+        }
+        renderTableHeaders();
+        loadEmployeesTable();
+      });
+    });
+  }
+
+  els.btnOpenColumns.addEventListener('click', () => {
+    initColumnPicker();
+    openModal(els.modalColumns);
+  });
+
+  els.btnSelectAllCols.addEventListener('click', () => {
+    window.COLUMN_DEFINITIONS.forEach(c => state.visibleColumns.add(c.key));
+    initColumnPicker();
+    renderTableHeaders();
+    loadEmployeesTable();
+  });
+
+  els.btnResetCols.addEventListener('click', () => {
+    state.visibleColumns = new Set(window.COLUMN_DEFINITIONS.map(c => c.key));
+    initColumnPicker();
+    renderTableHeaders();
+    loadEmployeesTable();
+  });
+
+  // ==========================================
   // EXCEL UPLOAD WORKFLOW
   // ==========================================
   els.btnOpenUpload.addEventListener('click', () => {
-    // Reset modal state
     state.parsedExcelData = null;
     els.fileInput.value = '';
     els.uploadPreview.style.display = 'none';
@@ -406,7 +472,7 @@
   async function processSelectedFile(file) {
     els.uploadPreview.style.display = 'block';
     els.previewFilename.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
-    els.previewValidCount.textContent = 'جاري قراءة الملف...';
+    els.previewValidCount.textContent = 'جاري قراءة وتجهيز الـ 44 حقلاً...';
     els.previewErrors.innerHTML = '';
     els.btnStartUpload.disabled = true;
 
@@ -414,7 +480,7 @@
       const parsed = await ExcelHandler.parseFile(file);
       state.parsedExcelData = parsed;
 
-      els.previewValidCount.textContent = `${parsed.validCount.toLocaleString('ar-EG')} سجل موظف صالح للرفع`;
+      els.previewValidCount.textContent = `${parsed.validCount.toLocaleString('ar-EG')} موظف صالح للرفع`;
       els.previewValidCount.className = 'badge badge-active';
 
       if (parsed.errors.length > 0) {
@@ -422,7 +488,7 @@
       }
 
       els.btnStartUpload.disabled = parsed.validCount === 0;
-      showToast(`تم التعرف على ${parsed.validCount} موظف بنجاح! جاهز للرفع.`, 'success');
+      showToast(`تم التعرف على ${parsed.validCount} موظف بجميع بياناتهم!`, 'success');
     } catch (err) {
       els.previewValidCount.textContent = 'خطأ في معالجة الملف';
       els.previewValidCount.className = 'badge badge-resigned';
@@ -431,7 +497,6 @@
     }
   }
 
-  // Start Batch Upload to Supabase
   els.btnStartUpload.addEventListener('click', async () => {
     if (!state.parsedExcelData || state.parsedExcelData.validCount === 0) return;
 
@@ -440,16 +505,14 @@
     els.uploadProgress.style.display = 'block';
     els.progressBarFill.style.width = '0%';
     els.progressPercentage.textContent = '0%';
-    els.progressText.textContent = 'جاري الاتصال بقاعدة البيانات السحابية...';
+    els.progressText.textContent = 'جاري الاتصال بالسحابة...';
 
     try {
-      // If full overwrite requested
       if (strategy === 'overwrite') {
-        els.progressText.textContent = 'جاري تهيئة قاعدة البيانات واستبدال السجلات...';
+        els.progressText.textContent = 'جاري تفريغ قاعدة البيانات السحابية واستبدال السجلات...';
         await API.clearAllEmployees();
       }
 
-      // Upsert batch by batch
       await API.batchUpsert(state.parsedExcelData.records, (completed, total) => {
         const pct = Math.round((completed / total) * 100);
         els.progressBarFill.style.width = `${pct}%`;
@@ -493,7 +556,6 @@
       const emp = await API.getEmployeeById(id);
       if (!emp) throw new Error('لم يتم العثور على بيانات الموظف');
 
-      // Populate form
       Object.keys(emp).forEach(key => {
         const input = document.getElementById(`inp-${key}`);
         if (input) {
@@ -501,7 +563,7 @@
         }
       });
 
-      document.getElementById('inp-id').readOnly = true; // ID cannot be changed once created
+      document.getElementById('inp-id').readOnly = true;
     } catch (err) {
       showToast('تعذر جلب تفاصيل الموظف: ' + err.message, 'error');
       closeModal(els.modalEmployee);
@@ -512,7 +574,6 @@
     e.preventDefault();
     const form = els.employeeForm;
 
-    // Validation
     const idVal = document.getElementById('inp-id').value.trim();
     const nameVal = document.getElementById('inp-employee_name').value.trim();
     if (!idVal) {
@@ -537,7 +598,7 @@
 
     try {
       await API.upsertEmployee(employeeData);
-      showToast('تم حفظ بيانات الموظف في قاعدة البيانات بنجاح!', 'success');
+      showToast('تم حفظ كافة البيانات في قاعدة البيانات بنجاح!', 'success');
       closeModal(els.modalEmployee);
       loadEmployeesTable();
       loadStats();
@@ -597,7 +658,7 @@
 
       const dateStr = new Date().toISOString().split('T')[0];
       ExcelHandler.exportToExcel(records, `TAQA_Gas_Employees_${dateStr}.xlsx`);
-      showToast(`تم تصدير ${records.length} موظف إلى إكسيل بنجاح!`, 'success');
+      showToast(`تم تصدير ${records.length} موظف بكامل الأعمدة إلى إكسيل بنجاح!`, 'success');
     } catch (err) {
       showToast('خطأ أثناء تصدير الإكسيل: ' + err.message, 'error');
     } finally {
@@ -608,6 +669,7 @@
 
   // App Initialization
   async function init() {
+    renderTableHeaders();
     await Promise.all([
       loadStats(),
       loadFilterOptions(),
@@ -615,6 +677,5 @@
     ]);
   }
 
-  // Run on page load
   document.addEventListener('DOMContentLoaded', init);
 })();
