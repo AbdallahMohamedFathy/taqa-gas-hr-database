@@ -110,6 +110,11 @@
           <i class="fa-solid fa-qrcode"></i>
           <span>إنشاء رابط / QR للموظفين</span>
         </button>
+        <button id="btn-open-requests" class="btn btn-warning header-btn-requests" title="طلبات تحديث بيانات الموظفين للمراجعة والاعتماد">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <span>طلبات الموظفين</span>
+          <span class="badge-pending-count" id="pending-requests-badge" style="display: none;">0</span>
+        </button>
         <button id="btn-open-upload" class="btn btn-accent">
           <i class="fa-solid fa-file-excel"></i>
           <span>رفع شيت إكسيل</span>
@@ -857,6 +862,112 @@
           </div>
 
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Pending Employee Update Requests (Staging Table & Approval Queue) -->
+  <div class="modal-backdrop" id="modal-pending-requests">
+    <div class="modal-card modal-xl" style="max-width: 1050px; width: 95vw;">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-clock-rotate-left text-warning"></i>
+          <span>طلبات تحديث بيانات الموظفين (المراجعة والاعتماد)</span>
+          <span class="badge-count" id="modal-requests-total-count">0 طلب</span>
+        </div>
+        <button class="modal-close-btn" data-close="modal-pending-requests">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 1.25rem;">
+        
+        <!-- Top Toolbar & Status Tabs -->
+        <div class="requests-toolbar">
+          <div class="requests-tabs">
+            <button type="button" class="req-tab active" data-status="pending">
+              <i class="fa-solid fa-hourglass-half"></i>
+              <span>قيد المراجعة</span>
+              <span class="req-tab-count" id="tab-count-pending">0</span>
+            </button>
+            <button type="button" class="req-tab" data-status="approved">
+              <i class="fa-solid fa-circle-check"></i>
+              <span>المعتمدة</span>
+              <span class="req-tab-count" id="tab-count-approved">0</span>
+            </button>
+            <button type="button" class="req-tab" data-status="rejected">
+              <i class="fa-solid fa-circle-xmark"></i>
+              <span>المرفوضة</span>
+              <span class="req-tab-count" id="tab-count-rejected">0</span>
+            </button>
+            <button type="button" class="req-tab" data-status="all">
+              <i class="fa-solid fa-layer-group"></i>
+              <span>الكل</span>
+            </button>
+          </div>
+
+          <div class="requests-actions">
+            <button type="button" id="btn-approve-all-pending" class="btn btn-sm btn-primary" title="اعتماد جميع الطلبات المعلقة دفعة واحدة">
+              <i class="fa-solid fa-check-double"></i>
+              <span>اعتماد الكل</span>
+            </button>
+            <button type="button" id="btn-refresh-requests" class="btn btn-sm btn-secondary" title="تحديث القائمة">
+              <i class="fa-solid fa-arrows-rotate"></i>
+              <span>تحديث</span>
+            </button>
+            <button type="button" id="btn-copy-sql-schema" class="btn btn-sm btn-outline" title="نسخ سكريبت SQL لإنشاء الجدول في Supabase">
+              <i class="fa-solid fa-database"></i>
+              <span>كود SQL السحابي</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Cloud Notice / Sync Status Alert -->
+        <div id="requests-cloud-notice" style="display: none; margin-bottom: 1rem; padding: 0.75rem 1rem; background: #fffbeb; border: 1px solid #fcd34d; border-radius: var(--radius-sm); font-size: 0.82rem; color: #92400e; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fa-solid fa-circle-info text-warning" style="font-size: 1.1rem;"></i>
+            <span>ملاحظة: تعمل الطلبات حالياً عبر المزامنة الفورية. لتفعيل الجدول السحابي الدائم في Supabase، يمكنك نسخ كود SQL وتشغيله في ثوانٍ.</span>
+          </div>
+          <button type="button" class="btn btn-sm btn-warning" id="btn-notice-copy-sql" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">
+            <i class="fa-solid fa-copy"></i> نسخ كود SQL
+          </button>
+        </div>
+
+        <!-- Requests Staging Table Container -->
+        <div class="requests-table-wrapper">
+          <table class="requests-table">
+            <thead>
+              <tr>
+                <th style="width: 140px;">تاريخ الإرسال</th>
+                <th style="width: 180px;">الموظف</th>
+                <th>التعديلات المطلوبة (قبل ⬅ بعد)</th>
+                <th style="width: 110px; text-align: center;">الحالة</th>
+                <th style="width: 160px; text-align: center;">الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="requests-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+
+          <div id="requests-empty" style="display: none; text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
+            <div style="font-size: 2.5rem; margin-bottom: 0.75rem; color: #cbd5e1;">
+              <i class="fa-solid fa-inbox"></i>
+            </div>
+            <h4 style="font-size: 1rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.25rem;">لا توجد طلبات في هذا القسم</h4>
+            <p style="font-size: 0.82rem;">عند قيام الموظفين بتعبئة روابط تحديث البيانات، ستظهر التعديلات هنا للمراجعة والاعتماد.</p>
+          </div>
+
+          <div id="requests-loader" style="display: none; text-align: center; padding: 2rem;">
+            <i class="fa-solid fa-spinner fa-spin text-primary" style="font-size: 1.75rem;"></i>
+            <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">جاري تحميل الطلبات...</div>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <div style="font-size: 0.8rem; color: var(--text-muted);">
+          <i class="fa-solid fa-shield-halved text-success"></i> لن يتم تطبيق أي تعديل في قاعدة البيانات الرئيسية إلا بعد النقر على <strong>اعتماد</strong>.
+        </div>
+        <button class="btn btn-secondary" data-close="modal-pending-requests">إغلاق النافذة</button>
       </div>
     </div>
   </div>

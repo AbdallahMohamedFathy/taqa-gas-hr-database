@@ -494,8 +494,8 @@
             </div>
 
             <button type="submit" id="btn-save-update" class="btn-submit">
-              <i class="fa-solid fa-cloud-arrow-up"></i>
-              <span>حفظ وتأكيد البيانات</span>
+              <i class="fa-solid fa-paper-plane"></i>
+              <span>إرسال طلب التعديل للمراجعة والاعتماد</span>
             </button>
           </form>
 
@@ -503,14 +503,15 @@
 
         <!-- Phase 3: Success Screen -->
         <div id="success-section" class="success-card">
-          <div class="success-icon-wrap">
-            <i class="fa-solid fa-check"></i>
+          <div class="success-icon-wrap" style="background: rgba(2, 128, 144, 0.1); color: var(--accent);">
+            <i class="fa-solid fa-paper-plane"></i>
           </div>
-          <h2>تم حفظ بياناتك بنجاح!</h2>
-          <p id="success-message">شكراً لك، تم تحديث بياناتك في قاعدة بيانات شركة طاقة غاز بنجاح، ولن تحتاج لإعادة ملء هذا النموذج مرة أخرى.</p>
-          <div style="font-size: 0.8rem; color: var(--text-muted); background: #f8fafc; padding: 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); max-width: 360px; margin: 0 auto;">
-            <i class="fa-solid fa-circle-check text-success"></i>
-            تم حفظ التعديلات في النظام في <span id="success-time">الآن</span>
+          <h2>تم إرسال طلب التحديث بنجاح!</h2>
+          <p id="success-message">شكراً لك، تم إرسال بياناتك المحدثة إلى إدارة الموارد البشرية (HR) للمراجعة والاعتماد. سيتم تطبيق التعديلات في قاعدة البيانات فور مراجعتها واعتمادها.</p>
+          <div id="submitted-fields-summary" style="margin-bottom: 1.25rem; text-align: right; background: #f8fafc; padding: 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.82rem; display: none;"></div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); background: #f8fafc; padding: 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); max-width: 380px; margin: 0 auto;">
+            <i class="fa-solid fa-clock-rotate-left text-accent"></i>
+            توقيت إرسال الطلب: <span id="success-time">الآن</span>
           </div>
         </div>
 

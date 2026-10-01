@@ -54,7 +54,22 @@
     modalDelete: document.getElementById('modal-delete'),
     modalColumns: document.getElementById('modal-columns'),
     modalLinkGen: document.getElementById('modal-link-gen'),
+    modalPendingRequests: document.getElementById('modal-pending-requests'),
     btnOpenLinkGen: document.getElementById('btn-open-link-gen'),
+    btnOpenRequests: document.getElementById('btn-open-requests'),
+    pendingRequestsBadge: document.getElementById('pending-requests-badge'),
+    requestsTableBody: document.getElementById('requests-table-body'),
+    requestsLoader: document.getElementById('requests-loader'),
+    requestsEmpty: document.getElementById('requests-empty'),
+    btnApproveAllPending: document.getElementById('btn-approve-all-pending'),
+    btnRefreshRequests: document.getElementById('btn-refresh-requests'),
+    btnCopySqlSchema: document.getElementById('btn-copy-sql-schema'),
+    btnNoticeCopySql: document.getElementById('btn-notice-copy-sql'),
+    requestsCloudNotice: document.getElementById('requests-cloud-notice'),
+    tabCountPending: document.getElementById('tab-count-pending'),
+    tabCountApproved: document.getElementById('tab-count-approved'),
+    tabCountRejected: document.getElementById('tab-count-rejected'),
+    modalRequestsTotalCount: document.getElementById('modal-requests-total-count'),
     btnLogout: document.getElementById('btn-logout'),
     hrUserEmail: document.getElementById('hr-user-email'),
     btnOpenUpload: document.getElementById('btn-open-upload'),
@@ -147,7 +162,7 @@
     });
   });
 
-  [els.modalUpload, els.modalEmployee, els.modalDelete, els.modalColumns, els.modalLinkGen, els.modalChangePwd].forEach(modal => {
+  [els.modalUpload, els.modalEmployee, els.modalDelete, els.modalColumns, els.modalLinkGen, els.modalPendingRequests].forEach(modal => {
     if (!modal) return;
     modal.addEventListener('click', (e) => {
       if (e.target === modal) closeModal(modal);
@@ -355,6 +370,18 @@
     return String(val);
   }
 
+  // Helper to render indicator badge for who made the last change
+  function renderModifierBadge(emp) {
+    const source = API.getModifierSource(emp);
+    if (source === 'employee') {
+      return `<span class="mod-badge mod-employee" title="آخر تعديل: تم تحديثه من الموظف واعتماده من الـ HR"><i class="fa-solid fa-user-check"></i> موظف</span>`;
+    }
+    if (source === 'hr') {
+      return `<span class="mod-badge mod-hr" title="آخر تعديل: بواسطة مسؤول HR"><i class="fa-solid fa-user-tie"></i> HR</span>`;
+    }
+    return '';
+  }
+
   // Fetch and Render Table Data
   async function loadEmployeesTable() {
     els.tableLoader.style.display = 'block';
@@ -397,7 +424,12 @@
               </button>
             </div>
           </td>
-          <td class="sticky-id">${emp.id || '-'}</td>
+          <td class="sticky-id">
+            <div class="emp-id-cell">
+              <span class="emp-id-val">${emp.id || '-'}</span>
+              ${renderModifierBadge(emp)}
+            </div>
+          </td>
         `;
 
         window.COLUMN_DEFINITIONS.forEach(col => {
@@ -1193,6 +1225,292 @@
 
 
 
+  // ==========================================
+  // EMPLOYEE UPDATE REQUESTS (STAGING & APPROVAL QUEUE)
+  // ==========================================
+  const SQL_SCHEMA_TEXT = `-- كود إنشاء جدول طلبات الموظفين في Supabase
+CREATE TABLE IF NOT EXISTS public.employee_update_requests (
+    id BIGSERIAL PRIMARY KEY,
+    employee_id TEXT NOT NULL,
+    employee_name TEXT,
+    requested_changes JSONB NOT NULL,
+    original_data JSONB,
+    status TEXT NOT NULL DEFAULT 'pending',
+    submitted_at TIMESTAMPTZ DEFAULT NOW(),
+    reviewed_at TIMESTAMPTZ,
+    reviewed_by TEXT,
+    notes TEXT
+);
+
+ALTER TABLE public.employees 
+ADD COLUMN IF NOT EXISTS last_modified_by TEXT DEFAULT 'hr',
+ADD COLUMN IF NOT EXISTS last_modified_at TIMESTAMPTZ DEFAULT NOW();
+
+ALTER TABLE public.employee_update_requests ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public all employee_update_requests" ON public.employee_update_requests FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);`;
+
+  let currentRequestsFilter = 'pending';
+  let cachedRequests = [];
+
+  async function updateRequestsBadgeCount() {
+    if (!els.pendingRequestsBadge) return;
+    try {
+      const count = await API.getPendingRequestsCount();
+      if (count > 0) {
+        els.pendingRequestsBadge.style.display = 'inline-flex';
+        els.pendingRequestsBadge.textContent = count > 99 ? '99+' : String(count);
+      } else {
+        els.pendingRequestsBadge.style.display = 'none';
+      }
+    } catch (e) {
+      els.pendingRequestsBadge.style.display = 'none';
+    }
+  }
+
+  async function loadPendingRequests(statusFilter = 'pending') {
+    if (!els.requestsTableBody) return;
+
+    currentRequestsFilter = statusFilter;
+    if (els.requestsLoader) els.requestsLoader.style.display = 'block';
+    if (els.requestsEmpty) els.requestsEmpty.style.display = 'none';
+    els.requestsTableBody.innerHTML = '';
+
+    try {
+      const result = await API.getUpdateRequests('all'); // fetch all to calculate tab badges
+      cachedRequests = result.requests || [];
+
+      // Cloud notice banner
+      if (els.requestsCloudNotice) {
+        els.requestsCloudNotice.style.display = result.isCloudAvailable ? 'none' : 'flex';
+      }
+
+      // Update Tab Counts
+      const pendingCount = cachedRequests.filter(r => r.status === 'pending').length;
+      const approvedCount = cachedRequests.filter(r => r.status === 'approved').length;
+      const rejectedCount = cachedRequests.filter(r => r.status === 'rejected').length;
+
+      if (els.tabCountPending) els.tabCountPending.textContent = pendingCount;
+      if (els.tabCountApproved) els.tabCountApproved.textContent = approvedCount;
+      if (els.tabCountRejected) els.tabCountRejected.textContent = rejectedCount;
+      if (els.modalRequestsTotalCount) els.modalRequestsTotalCount.textContent = `${cachedRequests.length} طلب`;
+
+      updateRequestsBadgeCount();
+
+      // Filter for active tab
+      const displayRequests = (statusFilter === 'all')
+        ? cachedRequests
+        : cachedRequests.filter(r => r.status === statusFilter);
+
+      if (els.requestsLoader) els.requestsLoader.style.display = 'none';
+
+      if (displayRequests.length === 0) {
+        if (els.requestsEmpty) els.requestsEmpty.style.display = 'block';
+        return;
+      }
+
+      // Render Staging Rows
+      const rowsHtml = displayRequests.map(req => {
+        const changes = req.requested_changes || {};
+        const original = req.original_data || {};
+        const changeKeys = Object.keys(changes).filter(k => k !== 'updated_at');
+
+        let diffHtml = '';
+        if (changeKeys.length === 0) {
+          diffHtml = '<span style="color: var(--text-muted);">(لا توجد حقول مسجلة)</span>';
+        } else {
+          diffHtml = '<div class="diff-list">' + changeKeys.map(k => {
+            const colDef = window.COLUMN_DEFINITIONS.find(c => c.key === k);
+            const label = colDef?.labelAr || colDef?.label || k;
+            const oldVal = original[k] ? String(original[k]) : '(فارغ)';
+            const newVal = changes[k] ? String(changes[k]) : '(فارغ)';
+
+            return `
+              <div class="diff-row">
+                <span class="diff-label">${label}:</span>
+                <span class="diff-old">${oldVal}</span>
+                <i class="fa-solid fa-arrow-left diff-arrow"></i>
+                <span class="diff-new">${newVal}</span>
+              </div>
+            `;
+          }).join('') + '</div>';
+        }
+
+        // Format Date
+        let dateDisplay = '-';
+        if (req.submitted_at) {
+          const d = new Date(req.submitted_at);
+          if (!isNaN(d.getTime())) {
+            dateDisplay = d.toLocaleDateString('ar-EG', { month: 'numeric', day: 'numeric' }) + ' ' + d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+          }
+        }
+
+        // Status Pill
+        let statusBadge = '';
+        if (req.status === 'approved') {
+          statusBadge = '<span class="status-pill status-approved"><i class="fa-solid fa-circle-check"></i> معتمد</span>';
+        } else if (req.status === 'rejected') {
+          statusBadge = '<span class="status-pill status-rejected"><i class="fa-solid fa-circle-xmark"></i> مرفوض</span>';
+        } else {
+          statusBadge = '<span class="status-pill status-pending"><i class="fa-solid fa-hourglass-half"></i> قيد المراجعة</span>';
+        }
+
+        // Actions
+        let actionButtons = '';
+        if (req.status === 'pending') {
+          actionButtons = `
+            <div style="display: flex; gap: 0.35rem; justify-content: center;">
+              <button type="button" class="btn btn-sm btn-primary" onclick="window.approveSingleRequest('${req.id}')" title="اعتماد التعديل وتطبيقه في قاعدة البيانات فوراً">
+                <i class="fa-solid fa-check"></i>
+                <span>اعتماد</span>
+              </button>
+              <button type="button" class="btn btn-sm btn-outline" style="color: var(--danger); border-color: #fca5a5;" onclick="window.rejectSingleRequest('${req.id}')" title="رفض التعديل">
+                <i class="fa-solid fa-xmark"></i>
+                <span>رفض</span>
+              </button>
+            </div>
+          `;
+        } else if (req.status === 'approved') {
+          actionButtons = `<span style="font-size: 0.76rem; color: #16a34a; font-weight: 700;"><i class="fa-solid fa-check-double"></i> تم اعتماده وحفظه</span>`;
+        } else {
+          actionButtons = `<span style="font-size: 0.76rem; color: #dc2626;" title="${req.notes || ''}"><i class="fa-solid fa-ban"></i> مرفوض</span>`;
+        }
+
+        return `
+          <tr data-req-id="${req.id}">
+            <td style="color: var(--text-muted); font-size: 0.78rem;">${dateDisplay}</td>
+            <td>
+              <div style="font-weight: 700; color: var(--navy-900);">${req.employee_name || 'موظف'}</div>
+              <div style="font-size: 0.75rem; color: var(--primary); font-weight: 600;">كود: ${req.employee_id}</div>
+            </td>
+            <td>${diffHtml}</td>
+            <td style="text-align: center;">${statusBadge}</td>
+            <td style="text-align: center;">${actionButtons}</td>
+          </tr>
+        `;
+      }).join('');
+
+      els.requestsTableBody.innerHTML = rowsHtml;
+
+    } catch (err) {
+      if (els.requestsLoader) els.requestsLoader.style.display = 'none';
+      if (els.requestsEmpty) els.requestsEmpty.style.display = 'block';
+      showToast('تعذر تحميل طلبات الموظفين: ' + err.message, 'error');
+    }
+  }
+
+  // Global window functions for table action buttons
+  window.approveSingleRequest = async function(reqId) {
+    const req = cachedRequests.find(r => String(r.id) === String(reqId));
+    if (!req) return;
+
+    try {
+      await API.approveUpdateRequest(req);
+      showToast(`تم اعتماد بيانات الموظف (كود: ${req.employee_id}) وتحديث قاعدة البيانات بنجاح!`, 'success');
+      loadPendingRequests(currentRequestsFilter);
+      loadEmployeesTable();
+      loadStats();
+    } catch (err) {
+      showToast('حدث خطأ أثناء الاعتماد: ' + err.message, 'error');
+    }
+  };
+
+  window.rejectSingleRequest = async function(reqId) {
+    const req = cachedRequests.find(r => String(r.id) === String(reqId));
+    if (!req) return;
+
+    const reason = prompt('سبب رفض طلب التعديل (اختياري):', 'بيانات غير مطابقة');
+    if (reason === null) return; // user cancelled
+
+    try {
+      await API.rejectUpdateRequest(req, reason);
+      showToast(`تم رفض طلب التعديل للموظف (كود: ${req.employee_id})`, 'info');
+      loadPendingRequests(currentRequestsFilter);
+    } catch (err) {
+      showToast('حدث خطأ أثناء الرفض: ' + err.message, 'error');
+    }
+  };
+
+  function initRequestsWorkflow() {
+    updateRequestsBadgeCount();
+
+    // Check periodically for new incoming requests every 30 seconds
+    setInterval(updateRequestsBadgeCount, 30000);
+
+    // Open Requests Modal
+    if (els.btnOpenRequests) {
+      els.btnOpenRequests.addEventListener('click', () => {
+        openModal(els.modalPendingRequests);
+        loadPendingRequests('pending');
+      });
+    }
+
+    // Tab buttons click
+    document.querySelectorAll('.req-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.req-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const st = tab.getAttribute('data-status');
+        loadPendingRequests(st);
+      });
+    });
+
+    // Refresh Requests List
+    if (els.btnRefreshRequests) {
+      els.btnRefreshRequests.addEventListener('click', () => {
+        loadPendingRequests(currentRequestsFilter);
+        showToast('تم تحديث قائمة الطلبات', 'info');
+      });
+    }
+
+    // Approve All Pending Requests
+    if (els.btnApproveAllPending) {
+      els.btnApproveAllPending.addEventListener('click', async () => {
+        const pendingList = cachedRequests.filter(r => r.status === 'pending');
+        if (pendingList.length === 0) {
+          showToast('لا توجد طلبات معلقة قيد المراجعة للاعتماد', 'info');
+          return;
+        }
+
+        if (!confirm(`هل أنت متأكد من رغبتك في اعتماد جميع الطلبات المعلقة (${pendingList.length} طلب) دفعة واحدة وحفظها في قاعدة البيانات؟`)) {
+          return;
+        }
+
+        els.btnApproveAllPending.disabled = true;
+        els.btnApproveAllPending.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري الاعتماد...</span>';
+
+        let approvedCount = 0;
+        for (const req of pendingList) {
+          try {
+            await API.approveUpdateRequest(req);
+            approvedCount++;
+          } catch (e) {
+            console.error('Error approving request:', req.id, e);
+          }
+        }
+
+        showToast(`تم بنجاح اعتماد وتحديث ${approvedCount} طلب في قاعدة البيانات!`, 'success');
+        els.btnApproveAllPending.disabled = false;
+        els.btnApproveAllPending.innerHTML = '<i class="fa-solid fa-check-double"></i> <span>اعتماد الكل</span>';
+
+        loadPendingRequests(currentRequestsFilter);
+        loadEmployeesTable();
+        loadStats();
+      });
+    }
+
+    // Copy SQL Schema Script
+    function copySql() {
+      navigator.clipboard.writeText(SQL_SCHEMA_TEXT).then(() => {
+        showToast('تم نسخ سكريبت SQL لإنشاء الجدول في Supabase إلى الحافظة!', 'success');
+      }).catch(() => {
+        showToast('يرجى نسخ الكود من ملف supabase_schema.sql الموجود بالمشروع', 'info');
+      });
+    }
+
+    if (els.btnCopySqlSchema) els.btnCopySqlSchema.addEventListener('click', copySql);
+    if (els.btnNoticeCopySql) els.btnNoticeCopySql.addEventListener('click', copySql);
+  }
+
   // Dashboard Loader (only runs after authentication)
   async function initDashboard() {
     renderTableHeaders();
@@ -1201,6 +1519,7 @@
       loadFilterOptions(),
       loadEmployeesTable()
     ]);
+    initRequestsWorkflow();
   }
 
   // App Entry Point with Security Gate

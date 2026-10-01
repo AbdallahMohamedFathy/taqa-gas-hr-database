@@ -360,28 +360,45 @@
     }
   }
 
-  // Step 3: Handle Form Submission & Secure Update
+  // Step 3: Handle Form Submission & Route to HR Approval Queue
   updateForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!currentEmployee) return;
 
     btnSaveUpdate.disabled = true;
-    btnSaveUpdate.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري حفظ وتأكيد البيانات...</span>';
+    btnSaveUpdate.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري إرسال الطلب للمراجعة...</span>';
 
     try {
       const formData = new FormData(updateForm);
       const updatePayload = {};
+      const originalData = {};
+      const changedFields = [];
 
-      // STRICT SECURITY SANITIZATION:
-      // Only include fields that are in SAFE_EDITABLE_KEYS and targetFields
+      // STRICT SECURITY SANITIZATION & DIFF CALCULATION:
       targetFields.forEach(key => {
         if (SAFE_EDITABLE_KEYS.includes(key)) {
           const rawVal = formData.get(key);
-          updatePayload[key] = (rawVal !== null && rawVal !== undefined) ? String(rawVal).trim() : null;
+          const newVal = (rawVal !== null && rawVal !== undefined) ? String(rawVal).trim() : null;
+          updatePayload[key] = newVal;
+
+          const oldVal = (currentEmployee[key] !== null && currentEmployee[key] !== undefined)
+            ? String(currentEmployee[key]).trim()
+            : '';
+
+          originalData[key] = oldVal;
+
+          if ((newVal || '') !== oldVal) {
+            changedFields.push({
+              key,
+              label: FIELD_DICTIONARY[key]?.label || key,
+              oldVal: oldVal || '(فارغ)',
+              newVal: newVal || '(فارغ)'
+            });
+          }
         }
       });
 
-      // If birth_date is being updated, auto-calculate age and birth_month
+      // If birth_date changed, auto-calculate age and birth_month
       if (updatePayload.birth_date) {
         const bd = parseDateRobust(updatePayload.birth_date);
         if (bd) {
@@ -390,16 +407,69 @@
         }
       }
 
-      // Add audit timestamp
-      updatePayload.updated_at = new Date().toISOString();
+      if (changedFields.length === 0) {
+        showToast('لم يتم تغيير أي بيانات، البيانات المدخلة مطابقة للمسجل حالياً', 'warning');
+        btnSaveUpdate.disabled = false;
+        btnSaveUpdate.innerHTML = '<i class="fa-solid fa-paper-plane"></i> <span>إرسال طلب التعديل للمراجعة والاعتماد</span>';
+        return;
+      }
 
-      // Perform update on Supabase
-      const { error } = await client
-        .from('employees')
-        .update(updatePayload)
-        .eq('id', currentEmployee.id);
+      // Prepare staging record for HR review (DO NOT touch employees table directly)
+      const requestRecord = {
+        employee_id: String(currentEmployee.id),
+        employee_name: currentEmployee.employee_name_ar || currentEmployee.employee_name || '',
+        requested_changes: updatePayload,
+        original_data: originalData,
+        status: 'pending',
+        submitted_at: new Date().toISOString()
+      };
 
-      if (error) throw error;
+      // Try inserting into Cloud Staging Table
+      let isCloudSaved = false;
+      try {
+        const { data, error } = await client
+          .from('employee_update_requests')
+          .insert(requestRecord)
+          .select()
+          .single();
+
+        if (!error && data) {
+          isCloudSaved = true;
+        }
+      } catch (cloudErr) {
+        console.warn('Cloud table not created yet, queuing locally:', cloudErr);
+      }
+
+      // Also persist to local queue for immediate fallback and multi-tab synchronization
+      try {
+        const STORAGE_KEY = 'taqa_pending_update_requests';
+        const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        existing.unshift({
+          id: 'req_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+          ...requestRecord,
+          is_local: !isCloudSaved
+        });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
+      } catch (storageErr) {}
+
+      // Build Summary of submitted fields
+      const summaryBox = document.getElementById('submitted-fields-summary');
+      if (summaryBox) {
+        summaryBox.style.display = 'block';
+        summaryBox.innerHTML = `
+          <div style="font-weight: 700; color: var(--primary); margin-bottom: 0.5rem;">
+            <i class="fa-solid fa-list-check"></i> الحقول التي تم إرسال تعديلاتها للمراجعة (${changedFields.length}):
+          </div>
+          <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.35rem;">
+            ${changedFields.map(f => `
+              <li style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border-color); padding-bottom: 0.25rem;">
+                <span style="font-weight: 600; color: var(--text-main);">${f.label}:</span>
+                <span style="color: var(--accent); font-weight: 700;">${f.newVal}</span>
+              </li>
+            `).join('')}
+          </ul>
+        `;
+      }
 
       // Show Success Phase
       formSection.style.display = 'none';
@@ -408,15 +478,15 @@
       const nowTime = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) + ' - ' + new Date().toLocaleDateString('ar-EG');
       document.getElementById('success-time').textContent = nowTime;
 
-      showToast('تم تحديث بياناتك بنجاح!', 'success');
+      showToast('تم إرسال طلب التحديث بنجاح للمراجعة والاعتماد!', 'success');
 
       // Scroll smoothly to top
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
     } catch (err) {
-      showToast('حدث خطأ أثناء الحفظ: ' + err.message, 'error');
+      showToast('حدث خطأ أثناء إرسال الطلب: ' + err.message, 'error');
       btnSaveUpdate.disabled = false;
-      btnSaveUpdate.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> <span>حفظ وتأكيد البيانات</span>';
+      btnSaveUpdate.innerHTML = '<i class="fa-solid fa-paper-plane"></i> <span>إرسال طلب التعديل للمراجعة والاعتماد</span>';
     }
   });
 

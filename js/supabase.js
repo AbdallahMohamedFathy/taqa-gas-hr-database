@@ -2,7 +2,44 @@
 (function() {
   const { createClient } = supabase;
   const client = createClient(window.APP_CONFIG.SUPABASE_URL, window.APP_CONFIG.SUPABASE_ANON_KEY);
-  window.dbClient = client;
+  const STORAGE_KEY_PENDING = 'taqa_pending_update_requests';
+  const STORAGE_KEY_AUDIT = 'taqa_employee_audit_log';
+
+  // Local storage helpers for fallback and audit tracking
+  function getLocalAudit() {
+    try {
+      const s = localStorage.getItem(STORAGE_KEY_AUDIT);
+      return s ? JSON.parse(s) : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function setLocalAudit(id, source) {
+    try {
+      const map = getLocalAudit();
+      map[String(id)] = {
+        modifiedBy: source, // 'employee' | 'hr'
+        modifiedAt: new Date().toISOString()
+      };
+      localStorage.setItem(STORAGE_KEY_AUDIT, JSON.stringify(map));
+    } catch (e) {}
+  }
+
+  function getLocalRequests() {
+    try {
+      const s = localStorage.getItem(STORAGE_KEY_PENDING);
+      return s ? JSON.parse(s) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveLocalRequests(arr) {
+    try {
+      localStorage.setItem(STORAGE_KEY_PENDING, JSON.stringify(arr));
+    } catch (e) {}
+  }
 
   window.API = {
     // Fetch unique options for dropdown filters
@@ -125,14 +162,33 @@
     // Create or Update single employee
     async upsertEmployee(employeeData) {
       employeeData.updated_at = new Date().toISOString();
-      const { data, error } = await client
-        .from('employees')
-        .upsert(employeeData, { onConflict: 'id' })
-        .select()
-        .single();
+      let res;
+      try {
+        const payloadWithAudit = {
+          ...employeeData,
+          last_modified_by: 'hr',
+          last_modified_at: new Date().toISOString()
+        };
+        const { data, error } = await client
+          .from('employees')
+          .upsert(payloadWithAudit, { onConflict: 'id' })
+          .select()
+          .single();
+        if (error) throw error;
+        res = data;
+      } catch (err) {
+        // Fallback: if last_modified_by column does not exist on Supabase, retry without it
+        const { data, error } = await client
+          .from('employees')
+          .upsert(employeeData, { onConflict: 'id' })
+          .select()
+          .single();
+        if (error) throw error;
+        res = data;
+      }
 
-      if (error) throw error;
-      return data;
+      setLocalAudit(employeeData.id, 'hr');
+      return res;
     },
 
     // Delete single employee
@@ -220,6 +276,219 @@
       }
 
       return allRows;
+    },
+
+    // ========================================================
+    // EMPLOYEE UPDATE REQUESTS (STAGING TABLE & APPROVAL QUEUE)
+    // ========================================================
+
+    // Submit an update request from employee (Saved to staging table, NOT main DB)
+    async submitUpdateRequest({ employeeId, employeeName, changes, originalData }) {
+      const record = {
+        employee_id: String(employeeId),
+        employee_name: employeeName || '',
+        requested_changes: changes || {},
+        original_data: originalData || {},
+        status: 'pending',
+        submitted_at: new Date().toISOString()
+      };
+
+      try {
+        const { data, error } = await client
+          .from('employee_update_requests')
+          .insert(record)
+          .select()
+          .single();
+
+        if (!error && data) {
+          return { success: true, data, storage: 'cloud' };
+        }
+      } catch (err) {
+        console.warn('Cloud employee_update_requests table not available, using local sync:', err);
+      }
+
+      // Fallback to local queue if Supabase table is not yet created
+      const localList = getLocalRequests();
+      const localRecord = {
+        id: 'req_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+        ...record,
+        is_local: true
+      };
+      localList.unshift(localRecord);
+      saveLocalRequests(localList);
+
+      return { success: true, data: localRecord, storage: 'local' };
+    },
+
+    // Fetch all requests (with optional status filter: 'pending', 'approved', 'rejected', 'all')
+    async getUpdateRequests(filterStatus = 'all') {
+      let cloudRequests = [];
+      let isCloudAvailable = true;
+
+      try {
+        let q = client.from('employee_update_requests').select('*').order('submitted_at', { ascending: false });
+        if (filterStatus && filterStatus !== 'all') {
+          q = q.eq('status', filterStatus);
+        }
+        const { data, error } = await q;
+        if (error) throw error;
+        cloudRequests = data || [];
+      } catch (err) {
+        isCloudAvailable = false;
+      }
+
+      // Merge local fallback requests
+      let localRequests = getLocalRequests();
+      if (filterStatus && filterStatus !== 'all') {
+        localRequests = localRequests.filter(r => r.status === filterStatus);
+      }
+
+      const map = new Map();
+      cloudRequests.forEach(r => map.set(String(r.id), r));
+      localRequests.forEach(r => {
+        if (!map.has(String(r.id))) {
+          map.set(String(r.id), r);
+        }
+      });
+
+      const all = Array.from(map.values()).sort((a, b) => new Date(b.submitted_at || 0) - new Date(a.submitted_at || 0));
+
+      return {
+        requests: all,
+        isCloudAvailable
+      };
+    },
+
+    // Get count of pending requests
+    async getPendingRequestsCount() {
+      try {
+        const { count, error } = await client
+          .from('employee_update_requests')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending');
+        if (!error && count !== null) {
+          const localPending = getLocalRequests().filter(r => r.status === 'pending');
+          return Math.max(count, localPending.length);
+        }
+      } catch (e) {}
+
+      return getLocalRequests().filter(r => r.status === 'pending').length;
+    },
+
+    // Approve an employee update request (Commits to main employees DB)
+    async approveUpdateRequest(request) {
+      if (!request || !request.employee_id) throw new Error('بيانات الطلب غير مكتملة');
+
+      const empId = String(request.employee_id);
+      const changes = request.requested_changes || {};
+
+      const updatePayload = {
+        ...changes,
+        updated_at: new Date().toISOString()
+      };
+
+      // Try applying update with last_modified_by = 'employee'
+      try {
+        const { error } = await client
+          .from('employees')
+          .update({
+            ...updatePayload,
+            last_modified_by: 'employee',
+            last_modified_at: new Date().toISOString()
+          })
+          .eq('id', empId);
+        if (error) throw error;
+      } catch (err) {
+        // Fallback: update without last_modified_by if column not created yet
+        const { error: err2 } = await client
+          .from('employees')
+          .update(updatePayload)
+          .eq('id', empId);
+        if (err2) throw err2;
+      }
+
+      // Record in local audit map so badge displays immediately
+      setLocalAudit(empId, 'employee');
+
+      // Mark request as approved
+      const approvalInfo = {
+        status: 'approved',
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: 'مسؤول الموارد البشرية (HR)'
+      };
+
+      try {
+        if (!request.is_local) {
+          await client
+            .from('employee_update_requests')
+            .update(approvalInfo)
+            .eq('id', request.id);
+        }
+      } catch (e) {}
+
+      const localList = getLocalRequests();
+      const idx = localList.findIndex(r => String(r.id) === String(request.id));
+      if (idx !== -1) {
+        localList[idx] = { ...localList[idx], ...approvalInfo };
+        saveLocalRequests(localList);
+      }
+
+      return true;
+    },
+
+    // Reject an update request
+    async rejectUpdateRequest(request, reason = '') {
+      if (!request) throw new Error('طلب غير موجود');
+
+      const rejectionInfo = {
+        status: 'rejected',
+        notes: reason || 'تم رفض التعديل بواسطة إدارة الموارد البشرية',
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: 'مسؤول الموارد البشرية (HR)'
+      };
+
+      try {
+        if (!request.is_local) {
+          await client
+            .from('employee_update_requests')
+            .update(rejectionInfo)
+            .eq('id', request.id);
+        }
+      } catch (e) {}
+
+      const localList = getLocalRequests();
+      const idx = localList.findIndex(r => String(r.id) === String(request.id));
+      if (idx !== -1) {
+        localList[idx] = { ...localList[idx], ...rejectionInfo };
+        saveLocalRequests(localList);
+      }
+
+      return true;
+    },
+
+    // Delete a request from the queue
+    async deleteUpdateRequest(requestId) {
+      try {
+        await client.from('employee_update_requests').delete().eq('id', requestId);
+      } catch (e) {}
+
+      const localList = getLocalRequests().filter(r => String(r.id) !== String(requestId));
+      saveLocalRequests(localList);
+      return true;
+    },
+
+    // Get modification source for an employee ('employee' | 'hr' | null)
+    getModifierSource(emp) {
+      if (!emp) return null;
+      if (emp.last_modified_by) {
+        return emp.last_modified_by;
+      }
+      const localMap = getLocalAudit();
+      const found = localMap[String(emp.id)];
+      if (found && found.modifiedBy) {
+        return found.modifiedBy;
+      }
+      return null;
     }
   };
 })();
