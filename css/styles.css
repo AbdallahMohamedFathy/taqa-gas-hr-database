@@ -654,7 +654,8 @@ table.data-table tbody tr:hover td.sticky-id {
 }
 
 /* Modals */
-.modal-overlay {
+.modal-overlay,
+.modal-backdrop {
   position: fixed;
   top: 0;
   left: 0;
@@ -672,12 +673,14 @@ table.data-table tbody tr:hover td.sticky-id {
   transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
-.modal-overlay.active {
+.modal-overlay.active,
+.modal-backdrop.active {
   opacity: 1;
   visibility: visible;
 }
 
-.modal-container {
+.modal-container,
+.modal-card {
   background: white;
   border-radius: var(--radius-lg);
   width: 100%;
@@ -691,7 +694,10 @@ table.data-table tbody tr:hover td.sticky-id {
   overflow: hidden;
 }
 
-.modal-overlay.active .modal-container {
+.modal-overlay.active .modal-container,
+.modal-overlay.active .modal-card,
+.modal-backdrop.active .modal-container,
+.modal-backdrop.active .modal-card {
   transform: translateY(0) scale(1);
 }
 
