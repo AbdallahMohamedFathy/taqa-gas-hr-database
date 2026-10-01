@@ -370,24 +370,34 @@
 
     try {
       const formData = new FormData(updateForm);
-      const updatePayload = {};
-      const originalData = {};
+      const actualChanges = {};
+      const actualOriginals = {};
       const changedFields = [];
 
-      // STRICT SECURITY SANITIZATION & DIFF CALCULATION:
+      // STRICT SECURITY SANITIZATION & PRECISE DIFF CALCULATION:
       targetFields.forEach(key => {
         if (SAFE_EDITABLE_KEYS.includes(key)) {
           const rawVal = formData.get(key);
-          const newVal = (rawVal !== null && rawVal !== undefined) ? String(rawVal).trim() : null;
-          updatePayload[key] = newVal;
+          const newVal = (rawVal !== null && rawVal !== undefined) ? String(rawVal).trim() : '';
 
-          const oldVal = (currentEmployee[key] !== null && currentEmployee[key] !== undefined)
+          let oldVal = (currentEmployee[key] !== null && currentEmployee[key] !== undefined)
             ? String(currentEmployee[key]).trim()
             : '';
 
-          originalData[key] = oldVal;
+          let isSame = (newVal === oldVal);
 
-          if ((newVal || '') !== oldVal) {
+          // For date fields, compare actual parsed timestamps to avoid format mismatch false-positives
+          if (!isSame && ['birth_date', 'start_date', 'resignation_date'].includes(key)) {
+            const d1 = parseDateRobust(oldVal);
+            const d2 = parseDateRobust(newVal);
+            if (d1 && d2 && d1.getTime() === d2.getTime()) {
+              isSame = true;
+            }
+          }
+
+          if (!isSame) {
+            actualChanges[key] = newVal;
+            actualOriginals[key] = oldVal;
             changedFields.push({
               key,
               label: FIELD_DICTIONARY[key]?.label || key,
@@ -398,12 +408,15 @@
         }
       });
 
-      // If birth_date changed, auto-calculate age and birth_month
-      if (updatePayload.birth_date) {
-        const bd = parseDateRobust(updatePayload.birth_date);
+      // Auto-calculate age and birth_month ONLY IF birth_date was ACTUALLY changed by the user
+      const birthDateChanged = changedFields.some(f => f.key === 'birth_date');
+      if (birthDateChanged && actualChanges.birth_date) {
+        const bd = parseDateRobust(actualChanges.birth_date);
         if (bd) {
-          updatePayload.birth_month = String(bd.getMonth() + 1);
-          updatePayload.age = calculateAge(updatePayload.birth_date);
+          actualChanges.birth_month = String(bd.getMonth() + 1);
+          actualChanges.age = calculateAge(actualChanges.birth_date);
+          actualOriginals.birth_month = currentEmployee.birth_month ? String(currentEmployee.birth_month).trim() : '';
+          actualOriginals.age = currentEmployee.age ? String(currentEmployee.age).trim() : '';
         }
       }
 
@@ -414,12 +427,12 @@
         return;
       }
 
-      // Prepare staging record for HR review (DO NOT touch employees table directly)
+      // Prepare staging record for HR review (Contains ONLY the fields that changed!)
       const requestRecord = {
         employee_id: String(currentEmployee.id),
         employee_name: currentEmployee.employee_name_ar || currentEmployee.employee_name || '',
-        requested_changes: updatePayload,
-        original_data: originalData,
+        requested_changes: actualChanges,
+        original_data: actualOriginals,
         status: 'pending',
         submitted_at: new Date().toISOString()
       };

@@ -1312,17 +1312,41 @@ CREATE POLICY "Allow public all employee_update_requests" ON public.employee_upd
       const rowsHtml = displayRequests.map(req => {
         const changes = req.requested_changes || {};
         const original = req.original_data || {};
-        const changeKeys = Object.keys(changes).filter(k => k !== 'updated_at');
+        const changeKeys = Object.keys(changes).filter(k => {
+          if (['updated_at', 'id', 'created_at', 'is_local', 'status', 'submitted_at', 'employee_id', 'employee_name'].includes(k)) return false;
+
+          let oldVal = (original[k] !== null && original[k] !== undefined) ? String(original[k]).trim() : '';
+          let newVal = (changes[k] !== null && changes[k] !== undefined) ? String(changes[k]).trim() : '';
+
+          if (oldVal === newVal) return false;
+
+          // Date normalization check
+          if (['birth_date', 'start_date', 'resignation_date'].includes(k)) {
+            const dOld = parseDateRobust(oldVal);
+            const dNew = parseDateRobust(newVal);
+            if (dOld && dNew && dOld.getTime() === dNew.getTime()) return false;
+          }
+
+          // Check if age or birth_month are redundant (only show if birth_date actually changed)
+          if (['age', 'birth_month'].includes(k)) {
+            const bdOld = parseDateRobust(original['birth_date']);
+            const bdNew = parseDateRobust(changes['birth_date']);
+            const bdChanged = (bdOld && bdNew) ? (bdOld.getTime() !== bdNew.getTime()) : (changes['birth_date'] && changes['birth_date'] !== original['birth_date']);
+            if (!bdChanged) return false;
+          }
+
+          return true;
+        });
 
         let diffHtml = '';
         if (changeKeys.length === 0) {
-          diffHtml = '<span style="color: var(--text-muted);">(لا توجد حقول مسجلة)</span>';
+          diffHtml = '<span style="color: var(--text-muted);">(لا توجد تعديلات جديدة)</span>';
         } else {
           diffHtml = '<div class="diff-list">' + changeKeys.map(k => {
             const colDef = window.COLUMN_DEFINITIONS.find(c => c.key === k);
             const label = colDef?.labelAr || colDef?.label || k;
-            const oldVal = original[k] ? String(original[k]) : '(فارغ)';
-            const newVal = changes[k] ? String(changes[k]) : '(فارغ)';
+            const oldVal = (original[k] !== null && original[k] !== undefined && String(original[k]).trim() !== '') ? String(original[k]) : '(فارغ)';
+            const newVal = (changes[k] !== null && changes[k] !== undefined && String(changes[k]).trim() !== '') ? String(changes[k]) : '(فارغ)';
 
             return `
               <div class="diff-row">

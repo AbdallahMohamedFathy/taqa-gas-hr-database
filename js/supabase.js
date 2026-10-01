@@ -26,10 +26,63 @@
     } catch (e) {}
   }
 
+  // Helper to sanitize requests so only fields that actually changed are kept
+  function sanitizeRequest(req) {
+    if (!req || typeof req !== 'object') return req;
+    const changes = req.requested_changes || {};
+    const orig = req.original_data || {};
+    const cleanChanges = {};
+    const cleanOrig = {};
+
+    const birthDateChanged = (() => {
+      if (!changes.birth_date) return false;
+      const o = orig.birth_date ? String(orig.birth_date).trim().split('T')[0] : '';
+      const n = String(changes.birth_date).trim().split('T')[0];
+      return o !== n;
+    })();
+
+    Object.keys(changes).forEach(k => {
+      if (['updated_at', 'id', 'created_at', 'is_local', 'status', 'submitted_at', 'employee_id', 'employee_name'].includes(k)) return;
+      let oldVal = (orig[k] !== null && orig[k] !== undefined) ? String(orig[k]).trim() : '';
+      let newVal = (changes[k] !== null && changes[k] !== undefined) ? String(changes[k]).trim() : '';
+
+      // Date comparison ignoring time
+      if (['birth_date', 'start_date', 'resignation_date'].includes(k)) {
+        const cleanOld = oldVal.split('T')[0].split(' ')[0];
+        const cleanNew = newVal.split('T')[0].split(' ')[0];
+        if (cleanOld && cleanNew && cleanOld === cleanNew) return;
+      }
+
+      // Ignore birth_month / age if birth_date itself wasn't changed
+      if (['age', 'birth_month'].includes(k) && !birthDateChanged) {
+        return;
+      }
+
+      if (oldVal !== newVal) {
+        cleanChanges[k] = changes[k];
+        cleanOrig[k] = orig[k];
+      }
+    });
+
+    return {
+      ...req,
+      requested_changes: cleanChanges,
+      original_data: cleanOrig
+    };
+  }
+
   function getLocalRequests() {
     try {
       const s = localStorage.getItem(STORAGE_KEY_PENDING);
-      return s ? JSON.parse(s) : [];
+      if (!s) return [];
+      const list = JSON.parse(s);
+      if (!Array.isArray(list)) return [];
+      const cleaned = list.map(sanitizeRequest);
+      // Auto-save cleaned list if any had redundant fields
+      try {
+        localStorage.setItem(STORAGE_KEY_PENDING, JSON.stringify(cleaned));
+      } catch (e) {}
+      return cleaned;
     } catch (e) {
       return [];
     }
@@ -332,7 +385,7 @@
         }
         const { data, error } = await q;
         if (error) throw error;
-        cloudRequests = data || [];
+        cloudRequests = (data || []).map(sanitizeRequest);
       } catch (err) {
         isCloudAvailable = false;
       }
@@ -381,9 +434,21 @@
 
       const empId = String(request.employee_id);
       const changes = request.requested_changes || {};
+      const original = request.original_data || {};
+
+      // Filter out unchanged values before updating DB
+      const cleanChanges = {};
+      Object.keys(changes).forEach(k => {
+        if (['updated_at', 'id', 'created_at', 'is_local', 'status', 'submitted_at', 'employee_id', 'employee_name'].includes(k)) return;
+        const oldVal = (original[k] !== null && original[k] !== undefined) ? String(original[k]).trim() : '';
+        const newVal = (changes[k] !== null && changes[k] !== undefined) ? String(changes[k]).trim() : '';
+        if (oldVal !== newVal) {
+          cleanChanges[k] = changes[k];
+        }
+      });
 
       const updatePayload = {
-        ...changes,
+        ...cleanChanges,
         updated_at: new Date().toISOString()
       };
 
