@@ -167,35 +167,71 @@
   function parseExcelDate(val) {
     if (!val) return '';
     if (val instanceof Date) {
-      return val.toISOString().split('T')[0];
+      const year = val.getFullYear();
+      const month = String(val.getMonth() + 1).padStart(2, '0');
+      const day = String(val.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
     }
     if (typeof val === 'number') {
       if (val > 10000 && val < 60000) {
         const utc_days = Math.floor(val - 25569);
         const date = new Date(utc_days * 86400 * 1000);
-        return date.toISOString().split('T')[0];
+        const year = date.getUTCFullYear();
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
       }
     }
-    const str = String(val).trim();
-    if (str.includes(' 00:00:00')) {
-      return str.replace(' 00:00:00', '');
+    const d = parseDateRobust(val);
+    if (d) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
     }
-    return str;
+    return String(val).trim();
   }
 
   // Robust date parser supporting DD/MM/YYYY, YYYY-MM-DD, and Date objects
   function parseDateRobust(dateStr) {
     if (!dateStr) return null;
-    if (dateStr instanceof Date) return dateStr;
+    if (dateStr instanceof Date) return isNaN(dateStr.getTime()) ? null : dateStr;
     const s = String(dateStr).trim();
     if (s.includes('/')) {
       const parts = s.split('/');
       if (parts.length === 3) {
-        const d = parseInt(parts[0], 10);
-        const m = parseInt(parts[1], 10) - 1;
-        const y = parseInt(parts[2], 10);
-        const dt = new Date(y, m, d);
-        if (!isNaN(dt.getTime())) return dt;
+        if (parts[0].length === 4) {
+          const y = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10) - 1;
+          const d = parseInt(parts[2], 10);
+          const dt = new Date(y, m, d);
+          if (!isNaN(dt.getTime())) return dt;
+        } else {
+          const d = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10) - 1;
+          const y = parseInt(parts[2], 10);
+          const dt = new Date(y, m, d);
+          if (!isNaN(dt.getTime())) return dt;
+        }
+      }
+    }
+    if (s.includes('-')) {
+      const clean = s.split('T')[0].split(' ')[0];
+      const parts = clean.split('-');
+      if (parts.length === 3) {
+        if (parts[0].length === 4) {
+          const y = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10) - 1;
+          const d = parseInt(parts[2], 10);
+          const dt = new Date(y, m, d);
+          if (!isNaN(dt.getTime())) return dt;
+        } else if (parts[2].length === 4) {
+          const d = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10) - 1;
+          const y = parseInt(parts[2], 10);
+          const dt = new Date(y, m, d);
+          if (!isNaN(dt.getTime())) return dt;
+        }
       }
     }
     const parsed = new Date(s);
@@ -216,10 +252,11 @@
   }
 
   // Helper to calculate Years of Experience (YOE) from Start Date
-  function calculateYOE(startDateStr) {
+  function calculateYOE(startDateStr, resignationDateStr) {
     const d = parseDateRobust(startDateStr);
     if (!d) return '';
-    const diff = Date.now() - d.getTime();
+    const end = resignationDateStr ? (parseDateRobust(resignationDateStr) || new Date()) : new Date();
+    const diff = end.getTime() - d.getTime();
     if (diff <= 0) return '0';
     const years = diff / (365.25 * 24 * 60 * 60 * 1000);
     return String(Math.floor(years));
@@ -294,7 +331,7 @@
               // SMART FORMULA EVALUATION: If YOE or Age or Month are empty or were #VALUE! in Excel:
               // Calculate YOE automatically from Start Date
               if ((!record.yoe || record.yoe === '') && record.start_date) {
-                record.yoe = calculateYOE(record.start_date);
+                record.yoe = calculateYOE(record.start_date, record.resignation_date);
                 if (record.yoe) hasAnyData = true;
               }
 
@@ -361,7 +398,7 @@
             val = rIdx + 1;
           }
           if (col.key === 'yoe' && (!val || val === '') && emp.start_date) {
-            val = calculateYOE(emp.start_date);
+            val = calculateYOE(emp.start_date, emp.resignation_date);
           }
           if (col.key === 'age' && (!val || val === '') && emp.birth_date) {
             val = calculateAge(emp.birth_date);

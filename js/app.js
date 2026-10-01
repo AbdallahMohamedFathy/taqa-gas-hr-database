@@ -215,22 +215,72 @@
     });
   }
 
-  // Helper to parse dates in DD/MM/YYYY or YYYY-MM-DD
+  // Helper to parse dates in DD/MM/YYYY, YYYY-MM-DD, or ISO strings
   function parseDateRobust(dateStr) {
     if (!dateStr) return null;
+    if (dateStr instanceof Date) return isNaN(dateStr.getTime()) ? null : dateStr;
     const s = String(dateStr).trim();
     if (s.includes('/')) {
       const parts = s.split('/');
       if (parts.length === 3) {
-        const d = parseInt(parts[0], 10);
-        const m = parseInt(parts[1], 10) - 1;
-        const y = parseInt(parts[2], 10);
-        const dt = new Date(y, m, d);
-        if (!isNaN(dt.getTime())) return dt;
+        if (parts[0].length === 4) {
+          const y = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10) - 1;
+          const d = parseInt(parts[2], 10);
+          const dt = new Date(y, m, d);
+          if (!isNaN(dt.getTime())) return dt;
+        } else {
+          const d = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10) - 1;
+          const y = parseInt(parts[2], 10);
+          const dt = new Date(y, m, d);
+          if (!isNaN(dt.getTime())) return dt;
+        }
+      }
+    }
+    if (s.includes('-')) {
+      const clean = s.split('T')[0].split(' ')[0];
+      const parts = clean.split('-');
+      if (parts.length === 3) {
+        if (parts[0].length === 4) {
+          const y = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10) - 1;
+          const d = parseInt(parts[2], 10);
+          const dt = new Date(y, m, d);
+          if (!isNaN(dt.getTime())) return dt;
+        } else if (parts[2].length === 4) {
+          const d = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10) - 1;
+          const y = parseInt(parts[2], 10);
+          const dt = new Date(y, m, d);
+          if (!isNaN(dt.getTime())) return dt;
+        }
       }
     }
     const parsed = new Date(s);
     return isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  // Format date for HTML5 <input type="date"> (must be YYYY-MM-DD)
+  function formatDateForInput(dateVal) {
+    if (!dateVal) return '';
+    const d = parseDateRobust(dateVal);
+    if (!d) return '';
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  // Format date for Table display (DD/MM/YYYY)
+  function formatDateDisplay(dateVal) {
+    if (!dateVal) return '';
+    const d = parseDateRobust(dateVal);
+    if (!d) return String(dateVal);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
   }
 
   function getCalculatedAge(birthDateStr) {
@@ -243,10 +293,11 @@
     return age > 0 ? String(age) : '';
   }
 
-  function getCalculatedYOE(startDateStr) {
+  function getCalculatedYOE(startDateStr, resignationDateStr) {
     const d = parseDateRobust(startDateStr);
     if (!d) return '';
-    const diff = Date.now() - d.getTime();
+    const end = resignationDateStr ? (parseDateRobust(resignationDateStr) || new Date()) : new Date();
+    const diff = end.getTime() - d.getTime();
     if (diff <= 0) return '0';
     return String(Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000)));
   }
@@ -255,13 +306,23 @@
   function renderBadgeOrText(key, val, emp) {
     // If YOE or Age are empty, calculate dynamically
     if (key === 'yoe' && (!val || val === '') && emp && emp.start_date) {
-      val = getCalculatedYOE(emp.start_date);
+      val = getCalculatedYOE(emp.start_date, emp.resignation_date);
     }
     if (key === 'age' && (!val || val === '') && emp && emp.birth_date) {
       val = getCalculatedAge(emp.birth_date);
     }
 
     if (!val) return '<span style="color: #cbd5e1;">-</span>';
+
+    // Format Dates nicely in the table
+    if (['start_date', 'birth_date'].includes(key)) {
+      return formatDateDisplay(val);
+    }
+    if (key === 'resignation_date') {
+      const formatted = formatDateDisplay(val);
+      return `<span class="badge badge-resigned" style="font-size: 0.8rem;"><i class="fa-solid fa-calendar-xmark me-1"></i> ${formatted}</span>`;
+    }
+
     if (key === 'status') {
       const s = String(val).toLowerCase();
       if (s.includes('active') || s.includes('شغال') || s.includes('قائم')) {
@@ -603,9 +664,37 @@
       Object.keys(emp).forEach(key => {
         const input = document.getElementById(`inp-${key}`);
         if (input) {
-          input.value = emp[key] || '';
+          if (input.type === 'date') {
+            input.value = formatDateForInput(emp[key]);
+          } else {
+            input.value = emp[key] != null ? emp[key] : '';
+          }
         }
       });
+
+      // Auto-compute YOE, Age, Birth Month if not yet filled
+      const modalBirthInp = document.getElementById('inp-birth_date');
+      const modalStartInp = document.getElementById('inp-start_date');
+      const modalResignInp = document.getElementById('inp-resignation_date');
+      const modalAgeInp = document.getElementById('inp-age');
+      const modalMonthInp = document.getElementById('inp-birth_month');
+      const modalYoeInp = document.getElementById('inp-yoe');
+
+      if (modalBirthInp && modalBirthInp.value) {
+        if (modalAgeInp && (!modalAgeInp.value || modalAgeInp.value === '')) {
+          modalAgeInp.value = getCalculatedAge(modalBirthInp.value);
+        }
+        if (modalMonthInp && (!modalMonthInp.value || modalMonthInp.value === '')) {
+          const bd = parseDateRobust(modalBirthInp.value);
+          if (bd) modalMonthInp.value = String(bd.getMonth() + 1);
+        }
+      }
+
+      if (modalStartInp && modalStartInp.value) {
+        if (modalYoeInp && (!modalYoeInp.value || modalYoeInp.value === '')) {
+          modalYoeInp.value = getCalculatedYOE(modalStartInp.value, modalResignInp ? modalResignInp.value : '');
+        }
+      }
 
       document.getElementById('inp-id').readOnly = true;
     } catch (err) {
@@ -723,3 +812,65 @@
 
   document.addEventListener('DOMContentLoaded', init);
 })();
+
+  // ==========================================
+  // REAL-TIME AUTO-CALCULATION IN MODAL
+  // ==========================================
+  const liveBirthInp = document.getElementById('inp-birth_date');
+  const liveStartInp = document.getElementById('inp-start_date');
+  const liveResignInp = document.getElementById('inp-resignation_date');
+  const liveAgeInp = document.getElementById('inp-age');
+  const liveMonthInp = document.getElementById('inp-birth_month');
+  const liveYoeInp = document.getElementById('inp-yoe');
+  const liveNidInp = document.getElementById('inp-national_id');
+  const liveGenderInp = document.getElementById('inp-gender');
+
+  function updateLiveYOE() {
+    if (liveStartInp && liveStartInp.value) {
+      liveYoeInp.value = getCalculatedYOE(liveStartInp.value, liveResignInp ? liveResignInp.value : '');
+    } else {
+      liveYoeInp.value = '';
+    }
+  }
+
+  function updateLiveAge() {
+    if (liveBirthInp && liveBirthInp.value) {
+      liveAgeInp.value = getCalculatedAge(liveBirthInp.value);
+      const bd = parseDateRobust(liveBirthInp.value);
+      if (bd && liveMonthInp) {
+        liveMonthInp.value = String(bd.getMonth() + 1);
+      }
+    } else {
+      liveAgeInp.value = '';
+      liveMonthInp.value = '';
+    }
+  }
+
+  if (liveStartInp) liveStartInp.addEventListener('change', updateLiveYOE);
+  if (liveResignInp) liveResignInp.addEventListener('change', updateLiveYOE);
+  if (liveBirthInp) liveBirthInp.addEventListener('change', updateLiveAge);
+
+  // Auto-extract Birth Date, Month, Age & Gender from 14-digit Egyptian National ID
+  if (liveNidInp) {
+    liveNidInp.addEventListener('input', () => {
+      const nid = liveNidInp.value.trim();
+      if (/^[23]\d{13}$/.test(nid)) {
+        const century = nid[0] === '2' ? '19' : '20';
+        const year = century + nid.slice(1, 3);
+        const month = nid.slice(3, 5);
+        const day = nid.slice(5, 7);
+        const formatted = `${year}-${month}-${day}`;
+        const dt = parseDateRobust(formatted);
+        if (dt && !isNaN(dt.getTime())) {
+          if (liveBirthInp && !liveBirthInp.value) {
+            liveBirthInp.value = formatted;
+            updateLiveAge();
+          }
+        }
+        if (liveGenderInp && !liveGenderInp.value) {
+          const genderDigit = parseInt(nid[12], 10);
+          liveGenderInp.value = (genderDigit % 2 === 1) ? 'Male' : 'Female';
+        }
+      }
+    });
+  }

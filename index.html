@@ -377,18 +377,22 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">تاريخ الميلاد (Birth Date)</label>
+            <label class="form-label" style="font-weight: 700; color: var(--primary);">
+              <i class="fa-solid fa-cake-candles text-primary"></i> تاريخ الميلاد (Birth Date)
+            </label>
             <input type="date" id="inp-birth_date" name="birth_date" class="form-input">
           </div>
 
           <div class="form-group">
             <label class="form-label">شهر الميلاد (Birth Month)</label>
-            <input type="text" id="inp-birth_month" name="birth_month" class="form-input">
+            <input type="text" id="inp-birth_month" name="birth_month" class="form-input" placeholder="يُحسب تلقائياً">
           </div>
 
           <div class="form-group">
-            <label class="form-label">السن (Age)</label>
-            <input type="text" id="inp-age" name="age" class="form-input" placeholder="السن">
+            <label class="form-label" style="font-weight: 700; color: var(--primary);">
+              <i class="fa-solid fa-user-clock text-primary"></i> السن (Age)
+            </label>
+            <input type="text" id="inp-age" name="age" class="form-input" placeholder="يُحسب تلقائياً">
           </div>
 
           <!-- Section 2: الوظيفة والشركة -->
@@ -493,13 +497,8 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">تاريخ التعيين (Start Date)</label>
-            <input type="date" id="inp-start_date" name="start_date" class="form-input">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">سنوات الخبرة (YOE)</label>
-            <input type="text" id="inp-yoe" name="yoe" class="form-input">
+            <label class="form-label">الحالة (Status)</label>
+            <input type="text" id="inp-status" name="status" class="form-input" placeholder="Personal, Active, Resigned">
           </div>
 
           <div class="form-group">
@@ -512,14 +511,26 @@
             <input type="text" id="inp-type_of_contract" name="type_of_contract" class="form-input" placeholder="مثال: Permanent Contract">
           </div>
 
+          <!-- تواريخ العمل والخبرة والاستقالة مجمعة معاً بوضوح -->
           <div class="form-group">
-            <label class="form-label">الحالة (Status)</label>
-            <input type="text" id="inp-status" name="status" class="form-input" placeholder="Personal, Active, Resigned">
+            <label class="form-label" style="font-weight: 700; color: #2e7d32;">
+              <i class="fa-solid fa-calendar-check text-success"></i> تاريخ التعيين (Start Date)
+            </label>
+            <input type="date" id="inp-start_date" name="start_date" class="form-input">
           </div>
 
           <div class="form-group">
-            <label class="form-label">تاريخ الاستقالة (Resignation Date)</label>
+            <label class="form-label" style="font-weight: 700; color: #dc2626;">
+              <i class="fa-solid fa-calendar-xmark text-danger"></i> تاريخ الاستقالة (Resignation Date)
+            </label>
             <input type="date" id="inp-resignation_date" name="resignation_date" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" style="font-weight: 700; color: var(--primary);">
+              <i class="fa-solid fa-business-time text-primary"></i> سنوات الخبرة (YOE)
+            </label>
+            <input type="text" id="inp-yoe" name="yoe" class="form-input" placeholder="يُحسب تلقائياً">
           </div>
 
           <div class="form-group">
