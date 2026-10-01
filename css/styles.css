@@ -1525,19 +1525,38 @@ table.data-table tbody tr:hover td.sticky-id {
   align-items: center;
 }
 
-/* Staging Table */
-.requests-table-wrapper {
-  overflow-x: auto;
+/* Modal Size & Layout overrides for Pending Requests */
+#modal-pending-requests .modal-container {
+  max-width: 1450px !important;
+  width: 95vw !important;
+  max-height: 92vh !important;
+  height: 90vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+#modal-pending-requests .modal-body {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 1.25rem !important;
+}
+
+#modal-pending-requests .requests-table-wrapper {
+  flex: 1 !important;
+  max-height: none !important;
+  overflow-y: auto !important;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   background: white;
-  max-height: 60vh;
 }
 
+/* Staging Table */
 .requests-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   text-align: right;
 }
 
@@ -1545,13 +1564,16 @@ table.data-table tbody tr:hover td.sticky-id {
   background: #f8fafc;
   color: #475569;
   font-weight: 700;
-  padding: 0.65rem 0.85rem;
-  border-bottom: 1px solid var(--border-color);
+  padding: 0.75rem 1rem;
+  border-bottom: 2px solid var(--border-color);
   white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 5;
 }
 
 .requests-table td {
-  padding: 0.65rem 0.85rem;
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid #f1f5f9;
   vertical-align: middle;
 }
@@ -1560,11 +1582,11 @@ table.data-table tbody tr:hover td.sticky-id {
   background: #fbfcfe;
 }
 
-/* Diff Styling */
+/* Diff Styling in Multi-Column Grid */
 .diff-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.5rem;
 }
 
 .diff-row {
@@ -1574,7 +1596,7 @@ table.data-table tbody tr:hover td.sticky-id {
   flex-wrap: wrap;
   font-size: 0.78rem;
   background: #f8fafc;
-  padding: 0.25rem 0.5rem;
+  padding: 0.35rem 0.6rem;
   border-radius: 6px;
   border: 1px solid #e2e8f0;
 }
@@ -1589,20 +1611,20 @@ table.data-table tbody tr:hover td.sticky-id {
   color: #dc2626;
   text-decoration: line-through;
   background: #fee2e2;
-  padding: 0.1rem 0.35rem;
+  padding: 0.15rem 0.4rem;
   border-radius: 4px;
 }
 
 .diff-arrow {
   color: #94a3b8;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
 }
 
 .diff-new {
   color: #16a34a;
   font-weight: 700;
   background: #dcfce7;
-  padding: 0.1rem 0.35rem;
+  padding: 0.15rem 0.4rem;
   border-radius: 4px;
 }
 
