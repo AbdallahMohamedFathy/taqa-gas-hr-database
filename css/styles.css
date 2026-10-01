@@ -1416,14 +1416,3 @@ table.data-table tbody tr:hover td.sticky-id {
   flex: 1;
   min-width: 140px;
 }
-
-.btn-whatsapp {
-  background: #25d366;
-  color: white;
-  border: none;
-}
-
-.btn-whatsapp:hover {
-  background: #1eb857;
-  color: white;
-}

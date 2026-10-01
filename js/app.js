@@ -916,7 +916,6 @@
   const genUrlInput = document.getElementById('gen-url-input');
   const btnCopyGenLink = document.getElementById('btn-copy-gen-link');
   const btnDownloadQr = document.getElementById('btn-download-qr');
-  const btnShareWhatsapp = document.getElementById('btn-share-whatsapp');
   const btnPreviewLink = document.getElementById('btn-preview-link');
 
   // Quick preset buttons
@@ -1117,24 +1116,6 @@
         document.body.removeChild(a);
         showToast('جاري تحميل صورة QR Code...', 'info');
       }
-    });
-  }
-
-  // WhatsApp Direct Share
-  if (btnShareWhatsapp) {
-    btnShareWhatsapp.addEventListener('click', () => {
-      const url = genUrlInput.value;
-      if (!url) return;
-
-      let msg = '';
-      if (linkGenState.type === 'specific' && linkGenState.specificId) {
-        msg = `السيد الزميل بشركة طاقة غاز (كود: ${linkGenState.specificId})،\nيرجى التكرم بالدخول على الرابط التالي لاستيفاء وتحديث بياناتك في قاعدة بيانات الموارد البشرية:\n${url}\nشاكرين حسن تعاونكم.`;
-      } else {
-        msg = `السادة الزملاء العاملين بشركة طاقة غاز،\nيرجى التكرم بالدخول على الرابط الرسمي التالي لاستيفاء وتحديث بياناتكم في قاعدة بيانات الموارد البشرية:\n${url}\nشاكرين حسن تعاونكم.`;
-      }
-
-      const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
-      window.open(waUrl, '_blank');
     });
   }
 
