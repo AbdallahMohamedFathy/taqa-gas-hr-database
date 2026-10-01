@@ -53,6 +53,12 @@
     modalEmployee: document.getElementById('modal-employee'),
     modalDelete: document.getElementById('modal-delete'),
     modalColumns: document.getElementById('modal-columns'),
+    modalLinkGen: document.getElementById('modal-link-gen'),
+    modalChangePwd: document.getElementById('modal-change-pwd'),
+    btnOpenLinkGen: document.getElementById('btn-open-link-gen'),
+    btnOpenChangePwd: document.getElementById('btn-open-change-pwd'),
+    btnLogout: document.getElementById('btn-logout'),
+    hrUserEmail: document.getElementById('hr-user-email'),
     btnOpenUpload: document.getElementById('btn-open-upload'),
     btnOpenAdd: document.getElementById('btn-open-add'),
     btnOpenColumns: document.getElementById('btn-open-columns'),
@@ -87,7 +93,23 @@
     btnConfirmDelete: document.getElementById('btn-confirm-delete'),
 
     // Toast
-    toastContainer: document.getElementById('toast-container')
+    toastContainer: document.getElementById('toast-container'),
+
+    // Auth Elements
+    authOverlay: document.getElementById('auth-overlay'),
+    authForm: document.getElementById('auth-form'),
+    authEmail: document.getElementById('auth-email'),
+    authPassword: document.getElementById('auth-password'),
+    authTogglePwd: document.getElementById('auth-toggle-pwd'),
+    authEyeIcon: document.getElementById('auth-eye-icon'),
+    authRemember: document.getElementById('auth-remember'),
+    authError: document.getElementById('auth-error'),
+    authErrorText: document.getElementById('auth-error-text'),
+    btnAuthLogin: document.getElementById('btn-auth-login'),
+    btnSaveNewPwd: document.getElementById('btn-save-new-pwd'),
+    inpPwdCurrent: document.getElementById('inp-pwd-current'),
+    inpPwdNew: document.getElementById('inp-pwd-new'),
+    inpPwdConfirm: document.getElementById('inp-pwd-confirm')
   };
 
   // Toast Notification System
@@ -131,7 +153,7 @@
     });
   });
 
-  [els.modalUpload, els.modalEmployee, els.modalDelete, els.modalColumns].forEach(modal => {
+  [els.modalUpload, els.modalEmployee, els.modalDelete, els.modalColumns, els.modalLinkGen, els.modalChangePwd].forEach(modal => {
     if (!modal) return;
     modal.addEventListener('click', (e) => {
       if (e.target === modal) closeModal(modal);
@@ -370,6 +392,9 @@
         let cellsHtml = `
           <td class="sticky-action">
             <div class="row-actions">
+              <button class="action-btn btn-share" title="إنشاء رابط / QR لهذا الموظف" onclick="window.openShareModalForEmployee('${emp.id}')">
+                <i class="fa-solid fa-qrcode"></i>
+              </button>
               <button class="action-btn btn-edit" title="تعديل الموظف" onclick="window.editEmployee('${emp.id}')">
                 <i class="fa-solid fa-pen-to-square"></i>
               </button>
@@ -868,14 +893,393 @@
     });
   }
 
-  // App Initialization
-  async function init() {
+
+  // ==========================================
+  // LINK & QR CODE GENERATOR WORKFLOW
+  // ==========================================
+  let qrCodeInstance = null;
+  const linkGenState = {
+    type: 'general', // 'general' or 'specific'
+    specificId: ''
+  };
+
+  const linkTabs = {
+    general: document.getElementById('tab-link-general'),
+    specific: document.getElementById('tab-link-specific')
+  };
+  const specificBox = document.getElementById('specific-emp-box');
+  const specificInput = document.getElementById('gen-specific-id');
+  const btnFetchSpecific = document.getElementById('btn-fetch-specific-emp');
+  const specificPreview = document.getElementById('specific-emp-preview');
+  const fieldsCheckboxesContainer = document.getElementById('gen-fields-checkboxes');
+  const qrDisplay = document.getElementById('qr-code-display');
+  const genUrlInput = document.getElementById('gen-url-input');
+  const btnCopyGenLink = document.getElementById('btn-copy-gen-link');
+  const btnDownloadQr = document.getElementById('btn-download-qr');
+  const btnShareWhatsapp = document.getElementById('btn-share-whatsapp');
+  const btnPreviewLink = document.getElementById('btn-preview-link');
+
+  // Quick preset buttons
+  const btnQuickContact = document.getElementById('btn-quick-contact');
+  const btnQuickIdentity = document.getElementById('btn-quick-identity');
+  const btnQuickAll = document.getElementById('btn-quick-all');
+  const btnQuickClear = document.getElementById('btn-quick-clear');
+
+  function getSelectedFieldKeys() {
+    const checked = [];
+    fieldsCheckboxesContainer.querySelectorAll('input[type="checkbox"]:checked').forEach(chk => {
+      checked.push(chk.value);
+    });
+    return checked;
+  }
+
+  function setCheckedFields(keys) {
+    fieldsCheckboxesContainer.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+      chk.checked = keys.includes(chk.value);
+    });
+    updateGeneratedLinkAndQR();
+  }
+
+  if (btnQuickContact) {
+    btnQuickContact.addEventListener('click', () => {
+      setCheckedFields(['mobile_numbers', 'bank_name', 'account_numbers', 'insurance_number', 'floor', 'telephone_extension', 'email']);
+    });
+  }
+
+  if (btnQuickIdentity) {
+    btnQuickIdentity.addEventListener('click', () => {
+      setCheckedFields(['employee_name_ar', 'national_id', 'birth_date', 'gender']);
+    });
+  }
+
+  if (btnQuickAll) {
+    btnQuickAll.addEventListener('click', () => {
+      fieldsCheckboxesContainer.querySelectorAll('input[type="checkbox"]').forEach(chk => chk.checked = true);
+      updateGeneratedLinkAndQR();
+    });
+  }
+
+  if (btnQuickClear) {
+    btnQuickClear.addEventListener('click', () => {
+      fieldsCheckboxesContainer.querySelectorAll('input[type="checkbox"]').forEach(chk => chk.checked = false);
+      updateGeneratedLinkAndQR();
+    });
+  }
+
+  // Tab switching
+  if (linkTabs.general && linkTabs.specific) {
+    linkTabs.general.addEventListener('click', () => {
+      linkTabs.general.classList.add('active');
+      linkTabs.specific.classList.remove('active');
+      specificBox.style.display = 'none';
+      linkGenState.type = 'general';
+      updateGeneratedLinkAndQR();
+    });
+
+    linkTabs.specific.addEventListener('click', () => {
+      linkTabs.specific.classList.add('active');
+      linkTabs.general.classList.remove('active');
+      specificBox.style.display = 'block';
+      linkGenState.type = 'specific';
+      specificInput.focus();
+      updateGeneratedLinkAndQR();
+    });
+  }
+
+  // Specific employee input change
+  if (specificInput) {
+    specificInput.addEventListener('input', () => {
+      linkGenState.specificId = specificInput.value.trim();
+      specificPreview.style.display = 'none';
+      updateGeneratedLinkAndQR();
+    });
+  }
+
+  // Fetch and verify specific employee ID
+  if (btnFetchSpecific) {
+    btnFetchSpecific.addEventListener('click', async () => {
+      const id = specificInput.value.trim();
+      if (!id) {
+        showToast('يرجى إدخال كود الموظف أولاً', 'warning');
+        return;
+      }
+      try {
+        const emp = await API.getEmployeeById(id);
+        if (emp) {
+          const name = emp.employee_name_ar || emp.employee_name || 'موظف';
+          specificPreview.textContent = `تم العثور على الموظف: ${name} (${emp.job_title || emp.job_post || ''})`;
+          specificPreview.style.display = 'block';
+          showToast(`تم التعرف على كود الموظف: ${name}`, 'success');
+        } else {
+          specificPreview.textContent = 'كود الموظف غير موجود بقاعدة البيانات!';
+          specificPreview.style.display = 'block';
+          specificPreview.style.color = '#dc2626';
+        }
+      } catch (e) {
+        showToast('خطأ أثناء فحص الكود', 'error');
+      }
+    });
+  }
+
+  // Regenerate URL & QR Code whenever checkboxes change
+  if (fieldsCheckboxesContainer) {
+    fieldsCheckboxesContainer.addEventListener('change', () => {
+      updateGeneratedLinkAndQR();
+    });
+  }
+
+  function updateGeneratedLinkAndQR() {
+    if (!genUrlInput || !qrDisplay) return;
+
+    // Base URL resolving
+    let origin = window.location.origin;
+    let pathname = window.location.pathname;
+    if (pathname.endsWith('/') || pathname.endsWith('\\')) {
+      pathname += 'update.html';
+    } else if (pathname.includes('.')) {
+      pathname = pathname.substring(0, pathname.lastIndexOf('/') + 1) + 'update.html';
+    } else {
+      pathname += '/update.html';
+    }
+    const baseUrl = `${origin}${pathname}`;
+
+    const selectedKeys = getSelectedFieldKeys();
+    const params = new URLSearchParams();
+
+    if (selectedKeys.length > 0) {
+      params.set('f', selectedKeys.join(','));
+    }
+
+    if (linkGenState.type === 'specific' && linkGenState.specificId) {
+      params.set('id', linkGenState.specificId);
+    }
+
+    const fullUrl = params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl;
+    genUrlInput.value = fullUrl;
+
+    // Render QR Code using QRCode.js
+    qrDisplay.innerHTML = '';
+    if (typeof QRCode !== 'undefined') {
+      try {
+        qrCodeInstance = new QRCode(qrDisplay, {
+          text: fullUrl,
+          width: 160,
+          height: 160,
+          colorDark: '#002060',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } catch (err) {
+        console.warn('QRCode render error:', err);
+      }
+    }
+  }
+
+  // Copy Link
+  if (btnCopyGenLink) {
+    btnCopyGenLink.addEventListener('click', async () => {
+      const url = genUrlInput.value;
+      if (!url) return;
+      try {
+        await navigator.clipboard.writeText(url);
+        showToast('تم نسخ الرابط إلى الحافظة بنجاح!', 'success');
+      } catch (err) {
+        genUrlInput.select();
+        document.execCommand('copy');
+        showToast('تم نسخ الرابط!', 'success');
+      }
+    });
+  }
+
+  // Download QR as PNG
+  if (btnDownloadQr) {
+    btnDownloadQr.addEventListener('click', () => {
+      const img = qrDisplay.querySelector('img') || qrDisplay.querySelector('canvas');
+      if (!img) {
+        showToast('لم يتم إنشاء رمز QR بعد', 'warning');
+        return;
+      }
+      let dataUrl = '';
+      if (img.tagName.toLowerCase() === 'img') {
+        dataUrl = img.src;
+      } else if (img.tagName.toLowerCase() === 'canvas') {
+        dataUrl = img.toDataURL('image/png');
+      }
+      if (dataUrl) {
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        const targetName = linkGenState.type === 'specific' && linkGenState.specificId 
+          ? `TAQA_Gas_QR_Emp_${linkGenState.specificId}.png` 
+          : 'TAQA_Gas_General_Update_QR.png';
+        a.download = targetName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast('جاري تحميل صورة QR Code...', 'info');
+      }
+    });
+  }
+
+  // WhatsApp Direct Share
+  if (btnShareWhatsapp) {
+    btnShareWhatsapp.addEventListener('click', () => {
+      const url = genUrlInput.value;
+      if (!url) return;
+
+      let msg = '';
+      if (linkGenState.type === 'specific' && linkGenState.specificId) {
+        msg = `السيد الزميل بشركة طاقة غاز (كود: ${linkGenState.specificId})،\nيرجى التكرم بالدخول على الرابط التالي لاستيفاء وتحديث بياناتك في قاعدة بيانات الموارد البشرية:\n${url}\nشاكرين حسن تعاونكم.`;
+      } else {
+        msg = `السادة الزملاء العاملين بشركة طاقة غاز،\nيرجى التكرم بالدخول على الرابط الرسمي التالي لاستيفاء وتحديث بياناتكم في قاعدة بيانات الموارد البشرية:\n${url}\nشاكرين حسن تعاونكم.`;
+      }
+
+      const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+      window.open(waUrl, '_blank');
+    });
+  }
+
+  // Preview Link in new tab
+  if (btnPreviewLink) {
+    btnPreviewLink.addEventListener('click', () => {
+      const url = genUrlInput.value;
+      if (url) window.open(url, '_blank');
+    });
+  }
+
+  // Open modal from Header button
+  if (els.btnOpenLinkGen) {
+    els.btnOpenLinkGen.addEventListener('click', () => {
+      linkTabs.general.click();
+      openModal(els.modalLinkGen);
+      setTimeout(updateGeneratedLinkAndQR, 100);
+    });
+  }
+
+  // Open modal from Table Row (Specific Employee)
+  window.openShareModalForEmployee = function(empId) {
+    openModal(els.modalLinkGen);
+    linkTabs.specific.click();
+    specificInput.value = empId;
+    linkGenState.specificId = empId;
+    btnFetchSpecific.click();
+    updateGeneratedLinkAndQR();
+  };
+
+  // ==========================================
+  // HR AUTHENTICATION CONTROLLER & SECURITY
+  // ==========================================
+  // Password Visibility Toggle
+  if (els.authTogglePwd && els.authPassword && els.authEyeIcon) {
+    els.authTogglePwd.addEventListener('click', () => {
+      const isPwd = els.authPassword.type === 'password';
+      els.authPassword.type = isPwd ? 'text' : 'password';
+      els.authEyeIcon.className = isPwd ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+    });
+  }
+
+  // Handle Login Form Submit
+  if (els.authForm) {
+    els.authForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = els.authEmail.value.trim();
+      const pwd = els.authPassword.value;
+      const remember = els.authRemember ? els.authRemember.checked : true;
+
+      els.authError.style.display = 'none';
+      els.btnAuthLogin.disabled = true;
+      els.btnAuthLogin.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري التحقق من الصلاحيات...</span>';
+
+      try {
+        const session = await AuthManager.login(email, pwd, remember);
+        showToast('تم تسجيل الدخول بنجاح، مرحباً بك!', 'success');
+        
+        // Hide overlay and load dashboard
+        els.authOverlay.classList.add('hidden');
+        if (els.hrUserEmail) els.hrUserEmail.textContent = session.email;
+        initDashboard();
+      } catch (err) {
+        els.authErrorText.textContent = err.message;
+        els.authError.style.display = 'flex';
+      } finally {
+        els.btnAuthLogin.disabled = false;
+        els.btnAuthLogin.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> <span>تسجيل الدخول إلى النظام</span>';
+      }
+    });
+  }
+
+  // Handle Logout
+  if (els.btnLogout) {
+    els.btnLogout.addEventListener('click', () => {
+      if (confirm('هل أنت متأكد من رغبتك في تسجيل الخروج من لوحة الـ HR؟')) {
+        AuthManager.logout();
+      }
+    });
+  }
+
+  // Handle Change Password Modal
+  if (els.btnOpenChangePwd) {
+    els.btnOpenChangePwd.addEventListener('click', () => {
+      document.getElementById('change-pwd-form').reset();
+      openModal(els.modalChangePwd);
+    });
+  }
+
+  if (els.btnSaveNewPwd) {
+    els.btnSaveNewPwd.addEventListener('click', async () => {
+      const cur = els.inpPwdCurrent.value;
+      const nw = els.inpPwdNew.value;
+      const conf = els.inpPwdConfirm.value;
+
+      if (!cur || !nw) {
+        showToast('يرجى ملء جميع الحقول', 'warning');
+        return;
+      }
+      if (nw !== conf) {
+        showToast('كلمة المرور الجديدة غير متطابقة مع التأكيد', 'error');
+        return;
+      }
+
+      els.btnSaveNewPwd.disabled = true;
+      els.btnSaveNewPwd.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري الحفظ...</span>';
+
+      try {
+        await AuthManager.changePassword(cur, nw);
+        showToast('تم تغيير كلمة المرور بنجاح!', 'success');
+        closeModal(els.modalChangePwd);
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        els.btnSaveNewPwd.disabled = false;
+        els.btnSaveNewPwd.innerHTML = '<i class="fa-solid fa-check"></i> <span>حفظ كلمة المرور الجديدة</span>';
+      }
+    });
+  }
+
+  // Dashboard Loader (only runs after authentication)
+  async function initDashboard() {
     renderTableHeaders();
     await Promise.all([
       loadStats(),
       loadFilterOptions(),
       loadEmployeesTable()
     ]);
+  }
+
+  // App Entry Point with Security Gate
+  function init() {
+    if (typeof AuthManager !== 'undefined' && AuthManager.isAuthenticated()) {
+      // User is authenticated: hide login overlay and load data
+      if (els.authOverlay) els.authOverlay.classList.add('hidden');
+      const user = AuthManager.getCurrentUser();
+      if (user && els.hrUserEmail) els.hrUserEmail.textContent = user.email;
+      initDashboard();
+    } else {
+      // User is NOT authenticated: keep overlay visible and block data fetching
+      if (els.authOverlay) {
+        els.authOverlay.classList.remove('hidden');
+        if (els.authEmail) els.authEmail.focus();
+      }
+    }
   }
 
   document.addEventListener('DOMContentLoaded', init);

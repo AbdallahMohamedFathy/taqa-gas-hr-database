@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>استيفاء وتحديث بيانات العاملين | طاقة غاز TAQA Gas</title>
+  <meta name="description" content="البوابة الرسمية لتحديث واستيفاء بيانات العاملين بشركة طاقة غاز">
+
+  <!-- Google Fonts: Cairo -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --primary: #002060;
+      --primary-dark: #001540;
+      --primary-light: #1a365d;
+      --accent: #028090;
+      --accent-light: #e0f2fe;
+      --success: #16a34a;
+      --warning: #d97706;
+      --danger: #dc2626;
+      --bg-page: #f1f5f9;
+      --bg-card: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #cbd5e1;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+      --shadow-md: 0 4px 12px -2px rgba(0,0,0,0.08);
+      --shadow-lg: 0 10px 25px -3px rgba(0,0,0,0.12);
+      --font-family: 'Cairo', 'Inter', system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background: var(--bg-page);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Brand Header */
+    .top-header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      padding: 1.25rem 1rem;
+      box-shadow: var(--shadow-md);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .header-inner {
+      max-width: 680px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .brand-icon {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+      color: white;
+      box-shadow: 0 4px 10px rgba(245, 158, 11, 0.35);
+      flex-shrink: 0;
+    }
+
+    .brand-text h1 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      line-height: 1.25;
+      letter-spacing: -0.3px;
+    }
+
+    .brand-text h1 span {
+      color: #facc15;
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-right: 0.35rem;
+    }
+
+    .brand-text p {
+      font-size: 0.78rem;
+      color: #cbd5e1;
+      margin-top: 0.15rem;
+    }
+
+    /* Main Container */
+    .main-container {
+      max-width: 680px;
+      width: 100%;
+      margin: 1.25rem auto 2.5rem;
+      padding: 0 1rem;
+      flex: 1;
+    }
+
+    .form-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      border: 1px solid rgba(203, 213, 225, 0.6);
+      overflow: hidden;
+    }
+
+    .card-banner {
+      background: linear-gradient(135deg, rgba(0, 32, 96, 0.04) 0%, rgba(2, 128, 144, 0.08) 100%);
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .banner-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(0, 32, 96, 0.1);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    .banner-content h2 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .banner-content p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 0.15rem;
+    }
+
+    .card-body {
+      padding: 1.5rem;
+    }
+
+    /* Verification Box (Phase 1) */
+    .verify-box {
+      display: flex;
+      flex-direction: column;
+      gap: 1.15rem;
+    }
+
+    .info-callout {
+      background: #f0f9ff;
+      border-right: 4px solid var(--accent);
+      padding: 0.85rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      color: #0369a1;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      line-height: 1.5;
+    }
+
+    /* Employee Badge (Verified Phase 2) */
+    .employee-badge {
+      background: #f8fafc;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.95rem 1.15rem;
+      margin-bottom: 1.35rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .emp-info {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .emp-avatar {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .emp-names h3 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .emp-names p {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .emp-code {
+      background: #e2e8f0;
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 0.82rem;
+      padding: 0.3rem 0.65rem;
+      border-radius: var(--radius-sm);
+      white-space: nowrap;
+    }
+
+    /* Form Fields */
+    .fields-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 1.15rem;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .field-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .field-label span.req {
+      color: var(--danger);
+      margin-right: 0.2rem;
+    }
+
+    .field-desc {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 0.2rem;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      font-size: 0.9rem;
+      font-family: inherit;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      outline: none;
+      background: #ffffff;
+      color: var(--text-main);
+      transition: all 0.2s ease;
+    }
+
+    .form-control:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(2, 128, 144, 0.15);
+    }
+
+    .form-control:disabled, .form-control[readonly] {
+      background: #f1f5f9;
+      color: #64748b;
+      cursor: not-allowed;
+    }
+
+    /* Smart Field Highlights */
+    .field-highlight {
+      background: rgba(2, 128, 144, 0.03);
+      padding: 0.85rem;
+      border-radius: var(--radius-md);
+      border: 1px dashed rgba(2, 128, 144, 0.35);
+    }
+
+    /* Buttons */
+    .btn-submit {
+      width: 100%;
+      padding: 0.85rem 1.25rem;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: white;
+      font-size: 0.95rem;
+      font-weight: 700;
+      font-family: inherit;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 12px rgba(0, 32, 96, 0.25);
+      transition: all 0.2s ease;
+      margin-top: 1.5rem;
+    }
+
+    .btn-submit:hover:not(:disabled) {
+      background: linear-gradient(135deg, var(--primary-light) 0%, var(--accent) 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(0, 32, 96, 0.3);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    /* Success State */
+    .success-card {
+      text-align: center;
+      padding: 2.5rem 1.5rem;
+      display: none;
+    }
+
+    .success-icon-wrap {
+      width: 75px;
+      height: 75px;
+      background: #dcfce7;
+      color: var(--success);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.25rem;
+      margin: 0 auto 1.25rem;
+      box-shadow: 0 8px 20px rgba(22, 163, 74, 0.2);
+    }
+
+    .success-card h2 {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 0.5rem;
+    }
+
+    .success-card p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      max-width: 440px;
+      margin: 0 auto 1.5rem;
+    }
+
+    .footer-copy {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      padding: 1rem 0;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e293b;
+      color: white;
+      padding: 0.75rem 1.25rem;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: var(--shadow-lg);
+      z-index: 100;
+      opacity: 0;
+      transition: all 0.3s ease;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-5px);
+    }
+
+    .toast.error {
+      background: #b91c1c;
+    }
+
+    .toast.success {
+      background: #15803d;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header class="top-header">
+    <div class="header-inner">
+      <div class="brand-icon">
+        <i class="fa-solid fa-fire-flame-curved"></i>
+      </div>
+      <div class="brand-text">
+        <h1>طاقة غاز <span>TAQA Gas</span></h1>
+        <p>استيفاء وتحديث بيانات العاملين والعقود</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="main-container">
+    <div class="form-card">
+
+      <div class="card-banner">
+        <div class="banner-icon">
+          <i class="fa-solid fa-clipboard-check"></i>
+        </div>
+        <div class="banner-content">
+          <h2>استمارة تحديث البيانات الوظيفية والشخصية</h2>
+          <p>يرجى استيفاء الحقول المحددة أدناه لضمان دقة ملفك الوظيفي</p>
+        </div>
+      </div>
+
+      <div class="card-body">
+
+        <!-- Phase 1: Identity Verification (if not pre-verified) -->
+        <div id="verify-section" class="verify-box">
+          <div class="info-callout">
+            <i class="fa-solid fa-shield-halved" style="font-size: 1.15rem; margin-top: 2px;"></i>
+            <div>
+              <strong>حماية وسرية البيانات:</strong>
+              يرجى إدخال كودك الوظيفي وتأكيد الرقم القومي أو الموبايل المسجل لعرض بياناتك وتحديثها بأمان.
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="verify-emp-id">
+              <span>كود الموظف (Employee ID) <span class="req">*</span></span>
+            </label>
+            <input type="text" id="verify-emp-id" class="form-control" placeholder="مثال: 500021" autofocus>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="verify-secret">
+              <span>الرقم القومي (14 رقم) أو رقم الموبايل المسجل <span class="req">*</span></span>
+            </label>
+            <input type="password" id="verify-secret" class="form-control" placeholder="لإثبات وتأكيد هويتك" maxlength="14">
+          </div>
+
+          <button id="btn-verify" class="btn-submit" type="button">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>التحقق ومتابعة التحديث</span>
+          </button>
+        </div>
+
+        <!-- Phase 2: Update Form (Visible after verification) -->
+        <div id="form-section" style="display: none;">
+
+          <div class="employee-badge">
+            <div class="emp-info">
+              <div class="emp-avatar" id="emp-avatar-letter">م</div>
+              <div class="emp-names">
+                <h3 id="emp-display-name">اسم الموظف</h3>
+                <p id="emp-display-title">المسمى الوظيفي</p>
+              </div>
+            </div>
+            <div class="emp-code" id="emp-display-code">كود: -</div>
+          </div>
+
+          <form id="update-form">
+            <div id="dynamic-fields-container" class="fields-grid">
+              <!-- Dynamically populated with ONLY the fields HR specified in the URL -->
+            </div>
+
+            <button type="submit" id="btn-save-update" class="btn-submit">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span>حفظ وتأكيد البيانات</span>
+            </button>
+          </form>
+
+        </div>
+
+        <!-- Phase 3: Success Screen -->
+        <div id="success-section" class="success-card">
+          <div class="success-icon-wrap">
+            <i class="fa-solid fa-check"></i>
+          </div>
+          <h2>تم حفظ بياناتك بنجاح!</h2>
+          <p id="success-message">شكراً لك، تم تحديث بياناتك في قاعدة بيانات شركة طاقة غاز بنجاح، ولن تحتاج لإعادة ملء هذا النموذج مرة أخرى.</p>
+          <div style="font-size: 0.8rem; color: var(--text-muted); background: #f8fafc; padding: 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); max-width: 360px; margin: 0 auto;">
+            <i class="fa-solid fa-circle-check text-success"></i>
+            تم حفظ التعديلات في النظام في <span id="success-time">الآن</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="footer-copy">
+      جميع الحقوق محفوظة © شركة طاقة غاز (TAQA Gas) - إدارة الموارد البشرية
+    </div>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/update.js"></script>
+</body>
+</html>

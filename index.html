@@ -25,6 +25,72 @@
 </head>
 <body>
 
+  <!-- HR Authentication & Security Overlay -->
+  <div id="auth-overlay" class="auth-overlay">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <div class="auth-logo-badge">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <h2>طاقة غاز TAQA Gas</h2>
+        <p>بوابة إدارة الموارد البشرية وقاعدة بيانات العاملين</p>
+        <div class="auth-security-pill">
+          <i class="fa-solid fa-lock"></i>
+          <span>نظام مشفر ومحمي بكلمة مرور</span>
+        </div>
+      </div>
+
+      <div id="auth-error" class="auth-error-box">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span id="auth-error-text">بيانات الدخول غير صحيحة</span>
+      </div>
+
+      <form id="auth-form" class="auth-form" onsubmit="return false;">
+        <div class="auth-field">
+          <label for="auth-email">
+            <i class="fa-solid fa-envelope text-primary"></i>
+            <span>البريد الإلكتروني للـ HR</span>
+          </label>
+          <div class="auth-input-wrap">
+            <i class="fa-solid fa-at field-icon"></i>
+            <input type="email" id="auth-email" class="auth-input" placeholder="admin@taqagas.com" required autocomplete="username">
+          </div>
+        </div>
+
+        <div class="auth-field">
+          <label for="auth-password">
+            <i class="fa-solid fa-key text-primary"></i>
+            <span>كلمة المرور</span>
+          </label>
+          <div class="auth-input-wrap">
+            <i class="fa-solid fa-lock field-icon"></i>
+            <input type="password" id="auth-password" class="auth-input" placeholder="••••••••" required autocomplete="current-password">
+            <button type="button" id="auth-toggle-pwd" class="auth-password-toggle" title="إظهار/إخفاء كلمة المرور">
+              <i class="fa-solid fa-eye" id="auth-eye-icon"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="auth-options">
+          <label class="auth-checkbox-label">
+            <input type="checkbox" id="auth-remember" checked>
+            <span>تذكر تسجيل الدخول (7 أيام)</span>
+          </label>
+        </div>
+
+        <button type="submit" id="btn-auth-login" class="auth-btn-submit">
+          <i class="fa-solid fa-right-to-bracket"></i>
+          <span>تسجيل الدخول إلى النظام</span>
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        <div>للدخول الافتراضي: <code>admin@taqagas.com</code> / <code>TaqaGas@2026</code></div>
+        <div style="margin-top: 4px;">يمكنك تغيير كلمة المرور في أي وقت بعد الدخول</div>
+      </div>
+    </div>
+  </div>
+
   <!-- Top Header Navigation -->
   <header class="app-header">
     <div class="header-container">
@@ -41,6 +107,10 @@
       </div>
 
       <div class="header-actions">
+        <button id="btn-open-link-gen" class="btn btn-accent" style="background: linear-gradient(135deg, #028090, #00a896);">
+          <i class="fa-solid fa-qrcode"></i>
+          <span>إنشاء رابط / QR للموظفين</span>
+        </button>
         <button id="btn-open-upload" class="btn btn-accent">
           <i class="fa-solid fa-file-excel"></i>
           <span>رفع شيت إكسيل</span>
@@ -52,6 +122,19 @@
         <button id="btn-export-excel" class="btn btn-outline">
           <i class="fa-solid fa-download"></i>
           <span>تصدير إكسيل</span>
+        </button>
+
+        <!-- HR User Profile & Logout -->
+        <div class="user-profile-badge" id="hr-user-pill">
+          <i class="fa-solid fa-user-tie avatar-icon"></i>
+          <span id="hr-user-email">admin@taqagas.com</span>
+        </div>
+        <button id="btn-open-change-pwd" class="btn-header-action" title="تغيير كلمة المرور">
+          <i class="fa-solid fa-key"></i>
+        </button>
+        <button id="btn-logout" class="btn-header-action btn-header-logout" title="تسجيل الخروج">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          <span>خروج</span>
         </button>
       </div>
     </div>
@@ -624,10 +707,210 @@
     </div>
   </div>
 
+    <!-- Modal: Link & QR Code Generator for Employees -->
+  <div class="modal-backdrop" id="modal-link-gen">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-qrcode text-accent"></i>
+          <span>إنشاء رابط و QR Code لاستيفاء وتحديث بيانات الموظفين</span>
+        </div>
+        <button class="modal-close-btn" data-close="modal-link-gen">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="qr-gen-wrapper">
+
+          <!-- Step 1: Target Audience Selection -->
+          <div>
+            <label class="form-label" style="font-weight: 700; margin-bottom: 0.5rem; display: block;">
+              <i class="fa-solid fa-bullseye text-primary"></i> 1. تحديد نوع الرابط والمستهدفين:
+            </label>
+            <div class="link-type-tabs">
+              <button type="button" class="link-type-tab active" id="tab-link-general" data-type="general">
+                <i class="fa-solid fa-users"></i>
+                <span>رابط عام موحد (لكل موظفي الشركة - 1800 موظف)</span>
+              </button>
+              <button type="button" class="link-type-tab" id="tab-link-specific" data-type="specific">
+                <i class="fa-solid fa-user"></i>
+                <span>رابط مخصص لموظف معين (محدد بالكود)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Specific Employee Picker (Hidden by default) -->
+          <div id="specific-emp-box" style="display: none; background: #f8fafc; padding: 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <label class="form-label required">كود الموظف المستهدف (ID)</label>
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="text" id="gen-specific-id" class="form-input" placeholder="أدخل كود الموظف (مثال: 500021)" style="flex: 1;">
+              <button type="button" id="btn-fetch-specific-emp" class="btn btn-secondary">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <span>فحص الكود</span>
+              </button>
+            </div>
+            <div id="specific-emp-preview" style="margin-top: 0.5rem; font-size: 0.82rem; color: #028090; font-weight: 600; display: none;"></div>
+          </div>
+
+          <!-- Step 2: Field Selection (Checkboxes) -->
+          <div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+              <label class="form-label" style="font-weight: 700; margin: 0;">
+                <i class="fa-solid fa-list-check text-primary"></i> 2. حدد الحقول المسموح للموظف برؤيتها وتعديلها:
+              </label>
+            </div>
+
+            <!-- Quick Selection Preset Buttons -->
+            <div class="quick-select-bar">
+              <button type="button" class="quick-btn" id="btn-quick-contact">
+                <i class="fa-solid fa-phone"></i> بيانات التواصل والبنك
+              </button>
+              <button type="button" class="quick-btn" id="btn-quick-identity">
+                <i class="fa-solid fa-id-card"></i> البيانات الشخصية والرقم القومي
+              </button>
+              <button type="button" class="quick-btn" id="btn-quick-all">
+                <i class="fa-solid fa-check-double"></i> تحديد الكل
+              </button>
+              <button type="button" class="quick-btn" id="btn-quick-clear">
+                <i class="fa-solid fa-xmark"></i> إلغاء التحديد
+              </button>
+            </div>
+
+            <div class="fields-picker-grid" id="gen-fields-checkboxes">
+              <label class="field-check-item">
+                <input type="checkbox" value="employee_name_ar" checked>
+                <span>الاسم باللغة العربية رباعياً</span>
+              </label>
+              <label class="field-check-item">
+                <input type="checkbox" value="mobile_numbers" checked>
+                <span>رقم الموبايل الشخصي (WhatsApp)</span>
+              </label>
+              <label class="field-check-item">
+                <input type="checkbox" value="national_id" checked>
+                <span>الرقم القومي (14 رقماً)</span>
+              </label>
+              <label class="field-check-item">
+                <input type="checkbox" value="birth_date" checked>
+                <span>تاريخ الميلاد</span>
+              </label>
+              <label class="field-check-item">
+                <input type="checkbox" value="gender" checked>
+                <span>النوع (Gender)</span>
+              </label>
+              <label class="field-check-item">
+                <input type="checkbox" value="bank_name" checked>
+                <span>اسم البنك</span>
+              </label>
+              <label class="field-check-item">
+                <input type="checkbox" value="account_numbers" checked>
+                <span>رقم الحساب البنكي / IBAN</span>
+              </label>
+              <label class="field-check-item">
+                <input type="checkbox" value="insurance_number" checked>
+                <span>الرقم التأميني</span>
+              </label>
+              <label class="field-check-item">
+                <input type="checkbox" value="floor">
+                <span>الدور / مكان التواجد</span>
+              </label>
+              <label class="field-check-item">
+                <input type="checkbox" value="telephone_extension">
+                <span>رقم التليفون الداخلي (Extension)</span>
+              </label>
+              <label class="field-check-item">
+                <input type="checkbox" value="email">
+                <span>البريد الإلكتروني الشخصي</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Step 3: Generated Output Card -->
+          <div class="qr-output-card">
+            <div style="text-align: center; width: 100%;">
+              <div style="font-size: 0.85rem; font-weight: 700; color: var(--primary); margin-bottom: 0.25rem;">
+                <i class="fa-solid fa-link"></i> الرابط المباشر والـ QR Code الجاهز للإرسال:
+              </div>
+              <div style="font-size: 0.76rem; color: var(--text-muted);">
+                الموظف سيرى فقط الحقول التي قمت بتحديدها أعلاه
+              </div>
+            </div>
+
+            <!-- QR Code Canvas Display -->
+            <div class="qr-canvas-box" id="qr-code-display">
+              <!-- Rendered by QRCode.js -->
+            </div>
+
+            <!-- URL Text Box -->
+            <div class="generated-link-box">
+              <input type="text" id="gen-url-input" class="link-input-display" readonly>
+              <button type="button" id="btn-copy-gen-link" class="btn btn-primary" title="نسخ الرابط">
+                <i class="fa-solid fa-copy"></i>
+                <span>نسخ الرابط</span>
+              </button>
+            </div>
+
+            <!-- Share & Download Actions -->
+            <div class="qr-actions-row">
+              <button type="button" id="btn-download-qr" class="btn btn-secondary">
+                <i class="fa-solid fa-download"></i>
+                <span>تحميل QR كصورة PNG</span>
+              </button>
+              <button type="button" id="btn-share-whatsapp" class="btn btn-whatsapp">
+                <i class="fa-brands fa-whatsapp"></i>
+                <span>إرسال عبر واتساب</span>
+              </button>
+              <button type="button" id="btn-preview-link" class="btn btn-outline">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                <span>فتح وتجربة الرابط</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Change Password -->
+  <div class="modal-backdrop" id="modal-change-pwd">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-key text-primary"></i>
+          <span>تغيير كلمة مرور الـ HR</span>
+        </div>
+        <button class="modal-close-btn" data-close="modal-change-pwd">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="change-pwd-form" style="display: flex; flex-direction: column; gap: 0.85rem;" onsubmit="return false;">
+          <div class="form-group">
+            <label class="form-label required">كلمة المرور الحالية</label>
+            <input type="password" id="inp-pwd-current" class="form-input" required autocomplete="current-password">
+          </div>
+          <div class="form-group">
+            <label class="form-label required">كلمة المرور الجديدة (6 أحرف على الأقل)</label>
+            <input type="password" id="inp-pwd-new" class="form-input" required autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <label class="form-label required">تأكيد كلمة المرور الجديدة</label>
+            <input type="password" id="inp-pwd-confirm" class="form-input" required autocomplete="new-password">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close="modal-change-pwd">إلغاء</button>
+        <button type="button" id="btn-save-new-pwd" class="btn btn-primary">
+          <i class="fa-solid fa-check"></i>
+          <span>حفظ كلمة المرور الجديدة</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Application Logic Scripts -->
+  <script src="js/qrcode.min.js"></script>
+  <script src="js/auth.js"></script>
   <script src="js/config.js"></script>
   <script src="js/supabase.js"></script>
   <script src="js/excel.js"></script>
