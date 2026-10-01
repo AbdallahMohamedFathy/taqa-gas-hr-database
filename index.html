@@ -867,8 +867,8 @@
   </div>
 
   <!-- Modal: Pending Employee Update Requests (Staging Table & Approval Queue) -->
-  <div class="modal-overlay" id="modal-pending-requests">
-    <div class="modal-container modal-xl" style="max-width: 1450px; width: 95vw; max-height: 92vh; height: 88vh;">
+  <div class="modal-overlay" id="modal-pending-requests" style="padding: 0.5rem;">
+    <div class="modal-container modal-xl" style="max-width: 98vw; width: 98vw; max-height: 94vh; height: 90vh;">
       <div class="modal-header">
         <div class="modal-title">
           <i class="fa-solid fa-clock-rotate-left text-warning"></i>
@@ -878,7 +878,7 @@
         <button class="modal-close-btn" data-close="modal-pending-requests">&times;</button>
       </div>
 
-      <div class="modal-body" style="padding: 1.25rem;">
+      <div class="modal-body" style="padding: 1rem 1.25rem;">
         
         <!-- Top Toolbar & Status Tabs -->
         <div class="requests-toolbar">
@@ -921,11 +921,11 @@
           <table class="requests-table">
             <thead>
               <tr>
-                <th style="width: 140px;">تاريخ الإرسال</th>
-                <th style="width: 180px;">الموظف</th>
-                <th>التعديلات المطلوبة (قبل ⬅ بعد)</th>
-                <th style="width: 110px; text-align: center;">الحالة</th>
-                <th style="width: 160px; text-align: center;">الإجراءات</th>
+                <th style="width: 130px; white-space: nowrap;">تاريخ الإرسال</th>
+                <th style="width: 190px; white-space: nowrap;">الموظف</th>
+                <th style="width: auto;">التعديلات المطلوبة (قبل ⬅ بعد)</th>
+                <th style="width: 120px; text-align: center; white-space: nowrap;">الحالة</th>
+                <th style="width: 160px; text-align: center; white-space: nowrap;">الإجراءات</th>
               </tr>
             </thead>
             <tbody id="requests-table-body">

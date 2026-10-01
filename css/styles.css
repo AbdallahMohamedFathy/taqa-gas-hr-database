@@ -1526,13 +1526,18 @@ table.data-table tbody tr:hover td.sticky-id {
 }
 
 /* Modal Size & Layout overrides for Pending Requests */
+#modal-pending-requests {
+  padding: 0.5rem !important;
+}
+
 #modal-pending-requests .modal-container {
-  max-width: 1450px !important;
-  width: 95vw !important;
-  max-height: 92vh !important;
+  max-width: 98vw !important;
+  width: 98vw !important;
+  max-height: 94vh !important;
   height: 90vh !important;
   display: flex !important;
   flex-direction: column !important;
+  margin: 0 auto !important;
 }
 
 #modal-pending-requests .modal-body {
@@ -1540,12 +1545,13 @@ table.data-table tbody tr:hover td.sticky-id {
   overflow-y: auto !important;
   display: flex !important;
   flex-direction: column !important;
-  padding: 1.25rem !important;
+  padding: 1rem 1.25rem !important;
 }
 
 #modal-pending-requests .requests-table-wrapper {
   flex: 1 !important;
   max-height: none !important;
+  overflow-x: auto !important;
   overflow-y: auto !important;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
@@ -1558,6 +1564,7 @@ table.data-table tbody tr:hover td.sticky-id {
   border-collapse: collapse;
   font-size: 0.84rem;
   text-align: right;
+  min-width: 1100px;
 }
 
 .requests-table th {
@@ -1582,49 +1589,53 @@ table.data-table tbody tr:hover td.sticky-id {
   background: #fbfcfe;
 }
 
-/* Diff Styling in Multi-Column Grid */
+/* Diff Styling in Multi-Column Grid - Spread Horizontally */
 .diff-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+  width: 100%;
 }
 
 .diff-row {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  flex-wrap: wrap;
+  gap: 0.35rem;
+  white-space: nowrap;
   font-size: 0.78rem;
   background: #f8fafc;
-  padding: 0.35rem 0.6rem;
+  padding: 0.3rem 0.6rem;
   border-radius: 6px;
   border: 1px solid #e2e8f0;
+  flex: 0 0 auto;
 }
 
 .diff-label {
   font-weight: 700;
   color: #1e293b;
-  min-width: 90px;
+  margin-left: 0.2rem;
 }
 
 .diff-old {
   color: #dc2626;
   text-decoration: line-through;
   background: #fee2e2;
-  padding: 0.15rem 0.4rem;
+  padding: 0.12rem 0.35rem;
   border-radius: 4px;
 }
 
 .diff-arrow {
-  color: #94a3b8;
-  font-size: 0.75rem;
+  color: #64748b;
+  font-size: 0.7rem;
+  margin: 0 0.1rem;
 }
 
 .diff-new {
   color: #16a34a;
   font-weight: 700;
   background: #dcfce7;
-  padding: 0.15rem 0.4rem;
+  padding: 0.12rem 0.35rem;
   border-radius: 4px;
 }
 
