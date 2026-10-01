@@ -182,15 +182,15 @@
       return insertedCount;
     },
 
-    // Fetch all records for Excel Export
-    async getAllForExport(searchQuery = '', filters = {}) {
+    // Fetch all records for Excel Export (matching current search, filters and sort)
+    async getAllForExport(searchQuery = '', filters = {}, sortField = 'id', sortAsc = true) {
       let allRows = [];
       let page = 0;
       const step = 1000;
       let hasMore = true;
 
       while (hasMore) {
-        let query = client.from('employees').select('*').range(page * step, (page + 1) * step - 1);
+        let query = client.from('employees').select('*');
 
         if (searchQuery && searchQuery.trim()) {
           const q = searchQuery.trim();
@@ -200,6 +200,12 @@
         if (filters.department) query = query.eq('department', filters.department);
         if (filters.status) query = query.eq('status', filters.status);
         if (filters.gender) query = query.eq('gender', filters.gender);
+
+        if (sortField) {
+          query = query.order(sortField, { ascending: sortAsc });
+        }
+
+        query = query.range(page * step, (page + 1) * step - 1);
 
         const { data, error } = await query;
         if (error) throw error;

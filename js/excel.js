@@ -379,18 +379,35 @@
     },
 
     // Export to Excel with EXACT Original Colors for BOTH Headers and Data Rows
-    exportToExcel(records, filename = 'Taqa_Gas_Employees.xlsx') {
+    exportToExcel(records, filename = 'Taqa_Gas_Employees.xlsx', visibleColumns = null) {
       if (!records || records.length === 0) {
         alert('لا توجد بيانات لتصديرها!');
         return;
       }
 
+      // Filter columns based on visibleColumns if provided
+      let exportColumns = EXCEL_COLUMN_CONFIG;
+      if (visibleColumns) {
+        const allowedSet = visibleColumns instanceof Set 
+          ? visibleColumns 
+          : new Set(Array.isArray(visibleColumns) ? visibleColumns : Object.keys(visibleColumns));
+        
+        if (allowedSet.size > 0) {
+          exportColumns = EXCEL_COLUMN_CONFIG.filter(col => allowedSet.has(col.key));
+        }
+      }
+
+      // Fallback if empty
+      if (exportColumns.length === 0) {
+        exportColumns = EXCEL_COLUMN_CONFIG;
+      }
+
       // Build 2D array of data (Header row + data rows)
-      const headers = EXCEL_COLUMN_CONFIG.map(col => col.header);
+      const headers = exportColumns.map(col => col.header);
       const dataRows = [headers];
 
       records.forEach((emp, rIdx) => {
-        const row = EXCEL_COLUMN_CONFIG.map(col => {
+        const row = exportColumns.map(col => {
           let val = emp[col.key];
 
           // Auto-fill calculated values if empty
@@ -407,6 +424,17 @@
             val = calculateBirthMonth(emp.birth_date);
           }
 
+          // Format dates nicely as DD/MM/YYYY in the exported sheet
+          if (['start_date', 'birth_date', 'resignation_date'].includes(col.key) && val) {
+            const d = parseDateRobust(val);
+            if (d) {
+              const day = String(d.getDate()).padStart(2, '0');
+              const month = String(d.getMonth() + 1).padStart(2, '0');
+              const year = d.getFullYear();
+              val = `${day}/${month}/${year}`;
+            }
+          }
+
           return val !== undefined && val !== null ? String(val) : '';
         });
         dataRows.push(row);
@@ -421,8 +449,8 @@
         ...records.map(() => ({ hpt: 20 }))
       ];
 
-      // Auto-compute column widths
-      const colWidths = EXCEL_COLUMN_CONFIG.map(col => {
+      // Auto-compute column widths based on exported columns
+      const colWidths = exportColumns.map(col => {
         let maxLen = Math.max(col.header.length, 12);
         if (col.header.includes('\n')) {
           const parts = col.header.split('\n');
@@ -444,7 +472,7 @@
             worksheet[cellRef] = { t: 's', v: '' };
           }
           const cell = worksheet[cellRef];
-          const colConfig = EXCEL_COLUMN_CONFIG[C] || { hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'left' };
+          const colConfig = exportColumns[C] || { hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'left' };
 
           if (isHeader) {
             // Header Row Styling

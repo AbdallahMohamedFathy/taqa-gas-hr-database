@@ -783,15 +783,21 @@
     els.btnExportExcel.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري التصدير...</span>';
 
     try {
-      const records = await API.getAllForExport(state.searchQuery, state.filters);
+      const records = await API.getAllForExport(state.searchQuery, state.filters, state.sortField, state.sortAsc);
       if (!records || records.length === 0) {
         showToast('لا توجد بيانات مطابقة لتصديرها!', 'warning');
         return;
       }
 
       const dateStr = new Date().toISOString().split('T')[0];
-      ExcelHandler.exportToExcel(records, `TAQA_Gas_Employees_${dateStr}.xlsx`);
-      showToast(`تم تصدير ${records.length} موظف بكامل الأعمدة إلى إكسيل بنجاح!`, 'success');
+      const colsToExport = state.visibleColumns && state.visibleColumns.size > 0 ? state.visibleColumns : null;
+      const countCols = colsToExport ? colsToExport.size : window.COLUMN_DEFINITIONS.length;
+
+      ExcelHandler.exportToExcel(records, `TAQA_Gas_Employees_${dateStr}.xlsx`, colsToExport);
+      
+      const hasFilters = !!(state.searchQuery || state.filters.company || state.filters.department || state.filters.status || state.filters.gender);
+      const filterNote = hasFilters ? ' (حسب نتائج البحث والفلترة)' : '';
+      showToast(`تم تصدير ${records.length.toLocaleString('ar-EG')} موظف و ${countCols} عمود مختار بنجاح!${filterNote}`, 'success');
     } catch (err) {
       showToast('خطأ أثناء تصدير الإكسيل: ' + err.message, 'error');
     } finally {
@@ -799,19 +805,6 @@
       els.btnExportExcel.innerHTML = '<i class="fa-solid fa-download"></i> <span>تصدير إكسيل</span>';
     }
   });
-
-  // App Initialization
-  async function init() {
-    renderTableHeaders();
-    await Promise.all([
-      loadStats(),
-      loadFilterOptions(),
-      loadEmployeesTable()
-    ]);
-  }
-
-  document.addEventListener('DOMContentLoaded', init);
-})();
 
   // ==========================================
   // REAL-TIME AUTO-CALCULATION IN MODAL
@@ -874,3 +867,16 @@
       }
     });
   }
+
+  // App Initialization
+  async function init() {
+    renderTableHeaders();
+    await Promise.all([
+      loadStats(),
+      loadFilterOptions(),
+      loadEmployeesTable()
+    ]);
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+})();
