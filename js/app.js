@@ -54,9 +54,7 @@
     modalDelete: document.getElementById('modal-delete'),
     modalColumns: document.getElementById('modal-columns'),
     modalLinkGen: document.getElementById('modal-link-gen'),
-    modalChangePwd: document.getElementById('modal-change-pwd'),
     btnOpenLinkGen: document.getElementById('btn-open-link-gen'),
-    btnOpenChangePwd: document.getElementById('btn-open-change-pwd'),
     btnLogout: document.getElementById('btn-logout'),
     hrUserEmail: document.getElementById('hr-user-email'),
     btnOpenUpload: document.getElementById('btn-open-upload'),
@@ -105,11 +103,7 @@
     authRemember: document.getElementById('auth-remember'),
     authError: document.getElementById('auth-error'),
     authErrorText: document.getElementById('auth-error-text'),
-    btnAuthLogin: document.getElementById('btn-auth-login'),
-    btnSaveNewPwd: document.getElementById('btn-save-new-pwd'),
-    inpPwdCurrent: document.getElementById('inp-pwd-current'),
-    inpPwdNew: document.getElementById('inp-pwd-new'),
-    inpPwdConfirm: document.getElementById('inp-pwd-confirm')
+    btnAuthLogin: document.getElementById('btn-auth-login')
   };
 
   // Toast Notification System
@@ -1197,44 +1191,7 @@
     });
   }
 
-  // Handle Change Password Modal
-  if (els.btnOpenChangePwd) {
-    els.btnOpenChangePwd.addEventListener('click', () => {
-      document.getElementById('change-pwd-form').reset();
-      openModal(els.modalChangePwd);
-    });
-  }
 
-  if (els.btnSaveNewPwd) {
-    els.btnSaveNewPwd.addEventListener('click', async () => {
-      const cur = els.inpPwdCurrent.value;
-      const nw = els.inpPwdNew.value;
-      const conf = els.inpPwdConfirm.value;
-
-      if (!cur || !nw) {
-        showToast('يرجى ملء جميع الحقول', 'warning');
-        return;
-      }
-      if (nw !== conf) {
-        showToast('كلمة المرور الجديدة غير متطابقة مع التأكيد', 'error');
-        return;
-      }
-
-      els.btnSaveNewPwd.disabled = true;
-      els.btnSaveNewPwd.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري الحفظ...</span>';
-
-      try {
-        await AuthManager.changePassword(cur, nw);
-        showToast('تم تغيير كلمة المرور بنجاح!', 'success');
-        closeModal(els.modalChangePwd);
-      } catch (err) {
-        showToast(err.message, 'error');
-      } finally {
-        els.btnSaveNewPwd.disabled = false;
-        els.btnSaveNewPwd.innerHTML = '<i class="fa-solid fa-check"></i> <span>حفظ كلمة المرور الجديدة</span>';
-      }
-    });
-  }
 
   // Dashboard Loader (only runs after authentication)
   async function initDashboard() {

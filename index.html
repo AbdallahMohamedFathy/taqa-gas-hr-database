@@ -85,8 +85,7 @@
       </form>
 
       <div class="auth-footer">
-        <div>للدخول الافتراضي: <code>admin@taqagas.com</code> / <code>TaqaGas@2026</code></div>
-        <div style="margin-top: 4px;">يمكنك تغيير كلمة المرور في أي وقت بعد الدخول</div>
+        <div>بيانات الدخول الإداري: <code>admin@taqagas.com</code> / <code>TaqaGas@2026</code></div>
       </div>
     </div>
   </div>
@@ -129,9 +128,6 @@
           <i class="fa-solid fa-user-tie avatar-icon"></i>
           <span id="hr-user-email">admin@taqagas.com</span>
         </div>
-        <button id="btn-open-change-pwd" class="btn-header-action" title="تغيير كلمة المرور">
-          <i class="fa-solid fa-key"></i>
-        </button>
         <button id="btn-logout" class="btn-header-action btn-header-logout" title="تسجيل الخروج">
           <i class="fa-solid fa-arrow-right-from-bracket"></i>
           <span>خروج</span>
@@ -861,42 +857,6 @@
           </div>
 
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Change Password -->
-  <div class="modal-backdrop" id="modal-change-pwd">
-    <div class="modal-card modal-sm">
-      <div class="modal-header">
-        <div class="modal-title">
-          <i class="fa-solid fa-key text-primary"></i>
-          <span>تغيير كلمة مرور الـ HR</span>
-        </div>
-        <button class="modal-close-btn" data-close="modal-change-pwd">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form id="change-pwd-form" style="display: flex; flex-direction: column; gap: 0.85rem;" onsubmit="return false;">
-          <div class="form-group">
-            <label class="form-label required">كلمة المرور الحالية</label>
-            <input type="password" id="inp-pwd-current" class="form-input" required autocomplete="current-password">
-          </div>
-          <div class="form-group">
-            <label class="form-label required">كلمة المرور الجديدة (6 أحرف على الأقل)</label>
-            <input type="password" id="inp-pwd-new" class="form-input" required autocomplete="new-password">
-          </div>
-          <div class="form-group">
-            <label class="form-label required">تأكيد كلمة المرور الجديدة</label>
-            <input type="password" id="inp-pwd-confirm" class="form-input" required autocomplete="new-password">
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" data-close="modal-change-pwd">إلغاء</button>
-        <button type="button" id="btn-save-new-pwd" class="btn btn-primary">
-          <i class="fa-solid fa-check"></i>
-          <span>حفظ كلمة المرور الجديدة</span>
-        </button>
       </div>
     </div>
   </div>

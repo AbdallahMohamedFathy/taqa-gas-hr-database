@@ -2,7 +2,6 @@
 // Uses standard Web Crypto API for secure SHA-256 credential hashing
 (function() {
   const STORAGE_KEY_AUTH = 'taqa_hr_session';
-  const STORAGE_KEY_CREDS = 'taqa_hr_credentials';
 
   // Default HR Admin Credentials
   const DEFAULT_ADMIN = {
@@ -22,16 +21,11 @@
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
-  // Get current active credentials (stored or default)
+  // Get current active credentials
   function getCredentials() {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY_CREDS);
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch (e) {
-      console.warn('Could not read stored credentials:', e);
-    }
+      localStorage.removeItem('taqa_hr_credentials');
+    } catch (e) {}
     return DEFAULT_ADMIN;
   }
 
@@ -91,10 +85,6 @@
         throw new Error('كلمة المرور غير صحيحة، يرجى المحاولة مرة أخرى');
       }
 
-      // If master default was used and stored creds were corrupt/out of sync, reset to clean state
-      if (isMasterDefault && !isHashMatch) {
-        localStorage.removeItem(STORAGE_KEY_CREDS);
-      }
 
       // Generate a secure session object
       const session = {
@@ -119,31 +109,6 @@
       localStorage.removeItem(STORAGE_KEY_AUTH);
       sessionStorage.removeItem(STORAGE_KEY_AUTH);
       window.location.reload();
-    },
-
-    // Allow HR to update their password
-    async changePassword(oldPassword, newPassword) {
-      if (!newPassword || newPassword.length < 6) {
-        throw new Error('يجب ألا تقل كلمة المرور الجديدة عن 6 أحرف');
-      }
-
-      const creds = getCredentials();
-      const oldHashed = await hashPassword(oldPassword, creds.salt);
-      if (oldHashed !== creds.passwordHash) {
-        throw new Error('كلمة المرور الحالية غير صحيحة');
-      }
-
-      const newSalt = 'taqa_' + Math.random().toString(36).substring(2);
-      const newHash = await hashPassword(newPassword, newSalt);
-
-      const updatedCreds = {
-        ...creds,
-        passwordHash: newHash,
-        salt: newSalt
-      };
-
-      localStorage.setItem(STORAGE_KEY_CREDS, JSON.stringify(updatedCreds));
-      return true;
     }
   };
 })();
