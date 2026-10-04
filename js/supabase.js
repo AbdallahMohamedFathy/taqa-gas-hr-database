@@ -130,18 +130,21 @@
     // Fetch unique options for dropdown filters
     async getFilterOptions() {
       try {
-        const allData = await this._fetchAllRows('company, department, status');
+        const allData = await this._fetchAllRows('company, department, status, company_sector, division, job_tree');
 
         const unique = (arr, key) => Array.from(new Set((arr || []).map(x => (x[key] || '').trim()).filter(Boolean))).sort();
 
         return {
           companies: unique(allData, 'company'),
           departments: unique(allData, 'department'),
-          statuses: unique(allData, 'status')
+          statuses: unique(allData, 'status'),
+          sectors: unique(allData, 'company_sector'),
+          divisions: unique(allData, 'division'),
+          jobTrees: unique(allData, 'job_tree')
         };
       } catch (err) {
         console.error('Error fetching filter options:', err);
-        return { companies: [], departments: [], statuses: [] };
+        return { companies: [], departments: [], statuses: [], sectors: [], divisions: [], jobTrees: [] };
       }
     },
 
@@ -217,6 +220,15 @@
           }
           if (filters.gender) {
             query = query.eq('gender', filters.gender);
+          }
+          if (filters.company_sector) {
+            query = query.eq('company_sector', filters.company_sector);
+          }
+          if (filters.division) {
+            query = query.eq('division', filters.division);
+          }
+          if (filters.job_tree) {
+            query = query.eq('job_tree', filters.job_tree);
           }
 
           // Apply Sorting
@@ -377,6 +389,9 @@
         if (filters.department) query = query.eq('department', filters.department);
         if (filters.status) query = query.eq('status', filters.status);
         if (filters.gender) query = query.eq('gender', filters.gender);
+        if (filters.company_sector) query = query.eq('company_sector', filters.company_sector);
+        if (filters.division) query = query.eq('division', filters.division);
+        if (filters.job_tree) query = query.eq('job_tree', filters.job_tree);
 
         if (sortField) {
           query = query.order(sortField, { ascending: sortAsc });

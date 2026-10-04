@@ -9,7 +9,10 @@
       company: '',
       department: '',
       status: '',
-      gender: ''
+      gender: '',
+      company_sector: '',
+      division: '',
+      job_tree: ''
     },
     sortField: 'id',
     sortAsc: true,
@@ -32,7 +35,10 @@
     // Search & Filters
     searchInput: document.getElementById('search-input'),
     filterCompany: document.getElementById('filter-company'),
+    filterSector: document.getElementById('filter-sector'),
+    filterDivision: document.getElementById('filter-division'),
     filterDepartment: document.getElementById('filter-department'),
+    filterJobTree: document.getElementById('filter-job-tree'),
     filterStatus: document.getElementById('filter-status'),
     filterGender: document.getElementById('filter-gender'),
     btnResetFilters: document.getElementById('btn-reset-filters'),
@@ -195,6 +201,15 @@
 
       els.filterStatus.innerHTML = '<option value="">جميع الحالات</option>' +
         options.statuses.map(s => `<option value="${s}">${s}</option>`).join('');
+
+      els.filterSector.innerHTML = '<option value="">جميع القطاعات (Sector)</option>' +
+        (options.sectors || []).map(s => `<option value="${s}">${s}</option>`).join('');
+
+      els.filterDivision.innerHTML = '<option value="">جميع القطاعات الرئيسية (Division)</option>' +
+        (options.divisions || []).map(d => `<option value="${d}">${d}</option>`).join('');
+
+      els.filterJobTree.innerHTML = '<option value="">كل شجرة الوظائف (Job Tree)</option>' +
+        (options.jobTrees || []).map(j => `<option value="${j}">${j}</option>`).join('');
     } catch (err) {
       console.error('Error loading filters:', err);
     }
@@ -490,12 +505,16 @@
   });
 
   // Filter Change Listeners
-  [els.filterCompany, els.filterDepartment, els.filterStatus, els.filterGender].forEach(select => {
+  [els.filterCompany, els.filterSector, els.filterDivision, els.filterDepartment,
+   els.filterJobTree, els.filterStatus, els.filterGender].forEach(select => {
     select.addEventListener('change', () => {
       state.filters.company = els.filterCompany.value;
       state.filters.department = els.filterDepartment.value;
       state.filters.status = els.filterStatus.value;
       state.filters.gender = els.filterGender.value;
+      state.filters.company_sector = els.filterSector.value;
+      state.filters.division = els.filterDivision.value;
+      state.filters.job_tree = els.filterJobTree.value;
       loadEmployeesTable();
     });
   });
@@ -504,11 +523,14 @@
   els.btnResetFilters.addEventListener('click', () => {
     els.searchInput.value = '';
     els.filterCompany.value = '';
+    els.filterSector.value = '';
+    els.filterDivision.value = '';
     els.filterDepartment.value = '';
+    els.filterJobTree.value = '';
     els.filterStatus.value = '';
     els.filterGender.value = '';
     state.searchQuery = '';
-    state.filters = { company: '', department: '', status: '', gender: '' };
+    state.filters = { company: '', department: '', status: '', gender: '', company_sector: '', division: '', job_tree: '' };
     loadEmployeesTable();
     showToast('تمت إعادة ضبط جميع الفلاتر', 'info');
   });
@@ -858,7 +880,7 @@
 
       ExcelHandler.exportToExcel(records, `TAQA_Gas_Employees_${dateStr}.xlsx`, colsToExport);
       
-      const hasFilters = !!(state.searchQuery || state.filters.company || state.filters.department || state.filters.status || state.filters.gender);
+      const hasFilters = !!state.searchQuery || Object.values(state.filters).some(Boolean);
       const filterNote = hasFilters ? ' (حسب نتائج البحث والفلترة)' : '';
       showToast(`تم تصدير ${records.length.toLocaleString('ar-EG')} موظف و ${countCols} عمود مختار بنجاح!${filterNote}`, 'success');
     } catch (err) {
