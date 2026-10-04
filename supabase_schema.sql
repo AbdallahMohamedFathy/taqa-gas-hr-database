@@ -61,3 +61,9 @@ CREATE POLICY "Allow public delete employee_update_requests"
 ON public.employee_update_requests FOR DELETE 
 TO anon, authenticated
 USING (true);
+-- =========================================================================
+-- 6. ASD column removal (OPTIONAL - destructive, run only when you are sure)
+--    تم إلغاء الحقل من الواجهة بالكامل. لحذف العمود نهائياً من قاعدة البيانات
+--    أزل علامة التعليق من السطر التالي:
+-- =========================================================================
+-- ALTER TABLE public.employees DROP COLUMN IF EXISTS asd;

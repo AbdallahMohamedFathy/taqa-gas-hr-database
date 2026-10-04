@@ -11,7 +11,6 @@
     'serial': 'serial_no',
     'مسلسل': 'serial_no',
     'م': 'serial_no',
-    'asd': 'asd',
     'hiring type': 'hiring_type',
     'نوع التعيين': 'hiring_type',
     'employee name': 'employee_name',
@@ -109,7 +108,6 @@
   // 44 Columns Configuration matching Taqa Gas exact Excel palette (Headers + Data Rows)
   const EXCEL_COLUMN_CONFIG = [
     { key: 'serial_no', header: 'S.', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
-    { key: 'asd', header: 'ASD', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
     { key: 'hiring_type', header: 'Hiring Type', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
     { key: 'id', header: 'ID', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF8DD', dFg: '000000', align: 'center' },
     { key: 'employee_name', header: 'Employee Name', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
@@ -345,10 +343,6 @@
               if ((!record.birth_month || record.birth_month === '') && record.birth_date) {
                 record.birth_month = calculateBirthMonth(record.birth_date);
                 if (record.birth_month) hasAnyData = true;
-              }
-
-              if (!record.id && record.asd) {
-                record.id = record.asd;
               }
 
               if (hasAnyData) {

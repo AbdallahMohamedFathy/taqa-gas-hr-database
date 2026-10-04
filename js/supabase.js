@@ -295,6 +295,23 @@
       return res;
     },
 
+    // Compute the next serial number (S.) automatically from existing employees.
+    // serial_no may be stored as text, so max is computed numerically, not lexicographically.
+    async getNextSerialNo() {
+      try {
+        const rows = await this._fetchAllRows('serial_no');
+        let max = 0;
+        (rows || []).forEach(r => {
+          const n = parseInt(String(r.serial_no == null ? '' : r.serial_no).replace(/[^0-9]/g, ''), 10);
+          if (!isNaN(n) && n > max) max = n;
+        });
+        return max + 1;
+      } catch (err) {
+        console.error('getNextSerialNo failed:', err);
+        return null;
+      }
+    },
+
     // Delete single employee
     async deleteEmployee(id) {
       const { error } = await client.from('employees').delete().eq('id', id);
