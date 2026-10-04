@@ -3,12 +3,14 @@
    ======================================================== */
 
 :root {
-  --primary: #028090;
-  --primary-dark: #006977;
-  --accent: #02c39a;
-  --navy-900: #06101e;
-  --navy-800: #0b1a2f;
-  --navy-700: #132a4a;
+  /* TAQA Gas brand: charcoal wordmark + green "Gas" + blue/yellow icon swoosh,
+     sampled directly from the company logo. */
+  --primary: #0b9444;       /* brand green  */
+  --primary-dark: #087736;
+  --accent: #1e6ca6;        /* brand blue   */
+  --navy-900: #2a2a2c;      /* charcoal, replaces navy for headings       */
+  --navy-800: #3f3f42;      /* charcoal, table headers / dark surfaces    */
+  --navy-700: #59595c;      /* brand gray, the exact "TAQA" wordmark tone */
 
   --bg-main: #eef2f7;
   --surface: #ffffff;
@@ -20,18 +22,19 @@
   --success: #10b981;
   --danger: #ef4444;
   --warning: #f59e0b;
-  --info: #3b82f6;
+  --info: #1e6ca6;
   --violet: #7c3aed;
 
-  /* Chart series palette - distinguishable in colour and in greyscale print */
-  --c1: #028090;
-  --c2: #0b4f6c;
-  --c3: #02c39a;
-  --c4: #f59e0b;
-  --c5: #7c3aed;
-  --c6: #ef4444;
-  --c7: #3b82f6;
-  --c8: #64748b;
+  /* Chart series palette, built from the brand colours (green/blue/gray/yellow)
+     plus supporting tints so 6-8 slice charts stay distinguishable. */
+  --c1: #0b9444;
+  --c2: #1e6ca6;
+  --c3: #59595c;
+  --c4: #fad213;
+  --c5: #5bae45;
+  --c6: #0f4c70;
+  --c7: #b7b7ba;
+  --c8: #c98a00;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -131,6 +134,25 @@ body {
 
 .rep-btn-ghost:hover { background: rgba(255, 255, 255, 0.2); }
 
+/* ============================ PRINT TIP ============================ */
+.rep-tip {
+  max-width: 1500px;
+  margin: 0.6rem auto 0;
+  padding: 0.55rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #eaf7ee;
+  color: #0b6b33;
+  border: 1px solid #c7ead1;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.rep-tip i { color: var(--primary); flex: none; }
+.rep-tip strong { font-weight: 700; }
+
 /* ============================ LOADER / ERROR ============================ */
 .rep-loader, .rep-error {
   max-width: 560px;
@@ -173,32 +195,28 @@ body {
 .rep-cover-brand {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: 1rem;
   margin-bottom: 1.1rem;
 }
 
 .rep-logo {
-  width: 46px;
-  height: 46px;
+  height: 52px;
+  width: auto;
   flex: none;
-  border-radius: 11px;
-  background: linear-gradient(135deg, var(--navy-800), var(--primary));
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.25rem;
+  display: block;
 }
 
-.rep-cover-brand h1 {
-  font-size: 1.25rem;
-  font-weight: 800;
+.rep-cover-brand-text {
+  padding-inline-start: 1rem;
+  border-inline-start: 2px solid var(--border);
+}
+
+.rep-cover-brand-text p {
+  font-size: 0.92rem;
+  font-weight: 700;
   color: var(--navy-800);
-  line-height: 1.25;
+  line-height: 1.4;
 }
-
-.rep-cover-brand h1 span { color: var(--primary); font-size: 0.95rem; }
-.rep-cover-brand p { font-size: 0.78rem; color: var(--text-muted); }
 
 .rep-cover-title {
   font-size: 1.5rem;
@@ -342,7 +360,7 @@ table.rep-table tbody td {
 }
 
 table.rep-table tbody tr:nth-child(even) { background: #f8fafc; }
-table.rep-table tbody tr.total-row { background: #e0f4f7 !important; font-weight: 700; }
+table.rep-table tbody tr.total-row { background: #e7f5ea !important; font-weight: 700; }
 table.rep-table tbody tr.total-row td { border-top: 2px solid var(--primary); }
 
 td.num, th.num { text-align: center; font-variant-numeric: tabular-nums; }
@@ -405,7 +423,6 @@ td.name { font-weight: 600; color: var(--navy-800); }
   }
 
   .no-print, .rep-toolbar, .rep-loader, .rep-error { display: none !important; }
-  .print-only { display: block; }
 
   .report-doc {
     max-width: none;
@@ -415,21 +432,6 @@ td.name { font-weight: 600; color: var(--navy-800); }
     box-shadow: none;
     display: block !important;
   }
-
-  /* Running header repeated on every printed page */
-  .print-running-header {
-    position: fixed;
-    top: 0;
-    inset-inline: 0;
-    display: flex;
-    justify-content: space-between;
-    font-size: 8px;
-    color: #64748b;
-    border-bottom: 1px solid #e2e8f0;
-    padding-bottom: 2px;
-  }
-
-  .prh-brand { font-weight: 700; color: var(--navy-800); }
 
   .rep-cover { page-break-after: avoid; }
 

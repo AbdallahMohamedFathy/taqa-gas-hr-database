@@ -28,8 +28,10 @@
   let ALL = [];
 
   // ------------------------------------------------------------- helpers
-  const PALETTE = ['#028090', '#0b4f6c', '#02c39a', '#f59e0b', '#7c3aed', '#ef4444', '#3b82f6', '#64748b',
-                   '#0891b2', '#b45309', '#15803d', '#be123c'];
+  // TAQA Gas brand colours (sampled from the company logo) plus supporting
+  // tints, so charts with up to 12 slices stay distinguishable and on-brand.
+  const PALETTE = ['#0b9444', '#1e6ca6', '#59595c', '#fad213', '#5bae45', '#0f4c70', '#b7b7ba', '#c98a00',
+                   '#237bb4', '#3b9c45', '#8a8a8d', '#8a5c00'];
 
   // Arabic names for the governorates / sites used in the sheet
   const LOCATION_AR = {
@@ -343,7 +345,7 @@
       : '.';
     document.getElementById('geo-summary').innerHTML = geoText;
 
-    document.getElementById('geo-chart').innerHTML = hBarChart(byLoc, { total: total, limit: 20 });
+    document.getElementById('geo-chart').innerHTML = hBarChart(byLoc, { total: total, limit: 20, color: '#0b9444' });
 
     const maxLoc = byLoc[0].value;
     const locRows = byLoc.map(l => {
@@ -419,8 +421,8 @@
     // ---------- 3. Organisation ----------
     panel('chart-company', 'التوزيع حسب الشركة', donutChart(countBy(rows, 'company')));
     panel('chart-sector', 'التوزيع حسب القطاع (Sector)', donutChart(countBy(rows, 'company_sector')));
-    panel('chart-division', 'أكبر القطاعات الرئيسية (Division)', hBarChart(countBy(rows, 'division'), { total: total, limit: 8 }));
-    panel('chart-jobtree', 'أكبر شجرات الوظائف (Job Tree)', hBarChart(countBy(rows, 'job_tree'), { total: total, limit: 8 }));
+    panel('chart-division', 'أكبر القطاعات الرئيسية (Division)', hBarChart(countBy(rows, 'division'), { total: total, limit: 8, color: '#1e6ca6' }));
+    panel('chart-jobtree', 'أكبر شجرات الوظائف (Job Tree)', hBarChart(countBy(rows, 'job_tree'), { total: total, limit: 8, color: '#0b9444' }));
 
     const byDept = countBy(rows, 'department');
     const maxDept = byDept[0].value;
@@ -453,7 +455,7 @@
       { label: '٤٥ – ٥٤', test: a => a >= 45 && a < 55 },
       { label: '٥٥ فأكثر', test: a => a >= 55 }
     ].map(b => ({ label: b.label, value: ages.filter(b.test).length }));
-    panel('chart-age', 'الشرائح العمرية', vBarChart(ageBands, { color: '#028090' }) +
+    panel('chart-age', 'الشرائح العمرية', vBarChart(ageBands, { color: '#1e6ca6' }) +
       `<p class="rep-note" style="margin:0.4rem 0 0">محسوبة من تاريخ الميلاد لعدد ${n(ages.length)} موظف لديهم تاريخ ميلاد مسجل.</p>`);
 
     const yoeBands = [
@@ -464,7 +466,7 @@
       { label: '١٥ – ١٩', test: y => y >= 15 && y < 20 },
       { label: '٢٠ فأكثر', test: y => y >= 20 }
     ].map(b => ({ label: b.label, value: yoes.filter(b.test).length }));
-    panel('chart-yoe', 'سنوات الخبرة داخل الشركة', vBarChart(yoeBands, { color: '#0b4f6c' }) +
+    panel('chart-yoe', 'سنوات الخبرة داخل الشركة', vBarChart(yoeBands, { color: '#0b9444' }) +
       `<p class="rep-note" style="margin:0.4rem 0 0">محسوبة من تاريخ التعيين لعدد ${n(yoes.length)} موظف.</p>`);
 
     const byContract = countBy(rows, 'type_of_contract');
@@ -495,7 +497,7 @@
       const other = graded.length - paCounts.reduce((a, x) => a + x.value, 0);
       if (other > 0) paCounts.push({ label: 'أخرى', value: other });
 
-      const paColors = { 'A': '#10b981', 'B': '#028090', 'C': '#f59e0b', 'D': '#ef4444', 'E': '#991b1b' };
+      const paColors = { 'A': '#0b9444', 'B': '#5bae45', 'C': '#fad213', 'D': '#f59e0b', 'E': '#ef4444' };
       panel('chart-pa', `توزيع تقييم الأداء لعام ${paYear}`,
         vBarChart(paCounts, { colorFor: r => paColors[r.label] || '#64748b' }) +
         `<p class="rep-note" style="margin:0.4rem 0 0">عدد المقيَّمين: <strong>${n(graded.length)}</strong> من ${n(total)} (${pct(graded.length, total)}).</p>`);
@@ -526,7 +528,7 @@
     if (promoTotal) {
       const promoted = rows.filter(r => promoYears().some(k => clean(r[k]).toUpperCase() === 'P')).length;
       panel('chart-promo', 'عدد الترقيات في كل عام',
-        vBarChart(promos, { color: '#7c3aed', limit: 12 }) +
+        vBarChart(promos, { color: '#1e6ca6', limit: 12 }) +
         `<p class="rep-note" style="margin:0.4rem 0 0">إجمالي <strong>${n(promoTotal)}</strong> ترقية شملت <strong>${n(promoted)}</strong> موظف (${pct(promoted, total)} من المشمولين بالتقرير).</p>`);
     } else {
       panel('chart-promo', 'الترقيات', '<p class="rep-note">لا توجد ترقيات مسجلة لهذه المجموعة.</p>');
