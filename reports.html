@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مركز التقارير | طاقة غاز TAQA Gas</title>
+  <meta name="description" content="مركز التقارير والتحليلات لقاعدة بيانات موظفي طاقة غاز: التوزيع الجغرافي على المحافظات، التركيبة التنظيمية والبشرية، الأداء والترقيات، مع إمكانية التصدير كملف PDF.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/reports.css">
+</head>
+<body>
+
+  <!-- ============================ TOOLBAR (screen only) ============================ -->
+  <div class="rep-toolbar no-print">
+    <div class="rep-toolbar-inner">
+      <a href="index.html" class="rep-btn rep-btn-ghost" title="رجوع إلى قاعدة البيانات">
+        <i class="fa-solid fa-arrow-right"></i>
+        <span>رجوع للقاعدة</span>
+      </a>
+
+      <div class="rep-toolbar-title">
+        <i class="fa-solid fa-chart-pie"></i>
+        <span>مركز التقارير والتحليلات</span>
+      </div>
+
+      <div class="rep-filters">
+        <select id="rf-location" class="rep-select" title="تصفية حسب المحافظة">
+          <option value="">كل المحافظات</option>
+        </select>
+        <select id="rf-company" class="rep-select" title="تصفية حسب الشركة">
+          <option value="">كل الشركات</option>
+        </select>
+        <select id="rf-sector" class="rep-select" title="تصفية حسب القطاع">
+          <option value="">كل القطاعات</option>
+        </select>
+        <select id="rf-division" class="rep-select" title="تصفية حسب القطاع الرئيسي">
+          <option value="">كل القطاعات الرئيسية</option>
+        </select>
+        <select id="rf-status" class="rep-select" title="حالة الخدمة">
+          <option value="active">على رأس العمل فقط</option>
+          <option value="all">الكل (شامل المستقيلين)</option>
+        </select>
+        <button id="rf-reset" class="rep-btn rep-btn-ghost" title="إعادة ضبط الفلاتر">
+          <i class="fa-solid fa-rotate-left"></i>
+        </button>
+      </div>
+
+      <button id="btn-print" class="rep-btn rep-btn-primary" title="حفظ التقرير كملف PDF">
+        <i class="fa-solid fa-file-pdf"></i>
+        <span>تصدير PDF</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ============================ LOADER ============================ -->
+  <div id="rep-loader" class="rep-loader no-print">
+    <i class="fa-solid fa-circle-notch fa-spin"></i>
+    <p>جاري تحميل بيانات الموظفين وتجهيز التحليلات...</p>
+  </div>
+
+  <div id="rep-error" class="rep-error no-print" style="display: none;">
+    <i class="fa-solid fa-triangle-exclamation"></i>
+    <span id="rep-error-text"></span>
+  </div>
+
+  <!-- ============================ REPORT DOCUMENT ============================ -->
+  <main id="report" class="report-doc" style="display: none;">
+
+    <!-- Running header shown on every printed page -->
+    <div class="print-running-header print-only">
+      <span class="prh-brand">طاقة غاز TAQA Gas</span>
+      <span class="prh-title">تقرير تحليلي لقاعدة بيانات العاملين</span>
+    </div>
+
+    <!-- ---------- Cover / report head ---------- -->
+    <header class="rep-cover">
+      <div class="rep-cover-brand">
+        <div class="rep-logo"><i class="fa-solid fa-fire-flame-simple"></i></div>
+        <div>
+          <h1>طاقة غاز <span>TAQA Gas</span></h1>
+          <p>إدارة الموارد البشرية — قاعدة بيانات العاملين</p>
+        </div>
+      </div>
+
+      <h2 class="rep-cover-title">التقرير التحليلي الشامل للقوى العاملة</h2>
+      <p class="rep-cover-sub">التوزيع الجغرافي على المحافظات · التركيبة التنظيمية والبشرية · الأداء والترقيات</p>
+
+      <div class="rep-cover-meta">
+        <div class="rcm-item">
+          <span class="rcm-label">تاريخ إصدار التقرير</span>
+          <span class="rcm-value" id="meta-date">—</span>
+        </div>
+        <div class="rcm-item">
+          <span class="rcm-label">نطاق التقرير</span>
+          <span class="rcm-value" id="meta-scope">كل الموظفين</span>
+        </div>
+        <div class="rcm-item">
+          <span class="rcm-label">عدد الموظفين المشمولين</span>
+          <span class="rcm-value" id="meta-count">—</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ---------- 1. KPIs ---------- -->
+    <section class="rep-section">
+      <h3 class="rep-h"><i class="fa-solid fa-gauge-high"></i> المؤشرات الرئيسية</h3>
+      <div id="kpi-grid" class="kpi-grid"></div>
+    </section>
+
+    <!-- ---------- 2. Governorates ---------- -->
+    <section class="rep-section">
+      <h3 class="rep-h"><i class="fa-solid fa-map-location-dot"></i> التوزيع الجغرافي على المحافظات</h3>
+      <p class="rep-note" id="geo-summary"></p>
+      <div id="geo-chart" class="chart-wrap"></div>
+      <div id="geo-table" class="table-wrap"></div>
+    </section>
+
+    <section class="rep-section">
+      <h3 class="rep-h"><i class="fa-solid fa-building-circle-check"></i> توزيع الشركات داخل كل محافظة</h3>
+      <div id="geo-company-matrix" class="table-wrap"></div>
+    </section>
+
+    <section class="rep-section">
+      <h3 class="rep-h"><i class="fa-solid fa-location-dot"></i> أكبر المواقع الفرعية</h3>
+      <div id="sublocation-table" class="table-wrap"></div>
+    </section>
+
+    <!-- ---------- 3. Organisation ---------- -->
+    <section class="rep-section">
+      <h3 class="rep-h"><i class="fa-solid fa-sitemap"></i> التركيبة التنظيمية</h3>
+      <div class="chart-row">
+        <div id="chart-company" class="chart-cell"></div>
+        <div id="chart-sector" class="chart-cell"></div>
+      </div>
+      <div class="chart-row">
+        <div id="chart-division" class="chart-cell"></div>
+        <div id="chart-jobtree" class="chart-cell"></div>
+      </div>
+    </section>
+
+    <section class="rep-section">
+      <h3 class="rep-h"><i class="fa-solid fa-table-list"></i> الإدارات التفصيلية</h3>
+      <div id="dept-table" class="table-wrap"></div>
+    </section>
+
+    <!-- ---------- 4. Workforce composition ---------- -->
+    <section class="rep-section">
+      <h3 class="rep-h"><i class="fa-solid fa-users-between-lines"></i> التركيبة البشرية</h3>
+      <div class="chart-row">
+        <div id="chart-gender" class="chart-cell"></div>
+        <div id="chart-hiring" class="chart-cell"></div>
+      </div>
+      <div class="chart-row">
+        <div id="chart-age" class="chart-cell"></div>
+        <div id="chart-yoe" class="chart-cell"></div>
+      </div>
+      <div id="contract-table" class="table-wrap"></div>
+    </section>
+
+    <!-- ---------- 5. Performance & promotions ---------- -->
+    <section class="rep-section">
+      <h3 class="rep-h"><i class="fa-solid fa-ranking-star"></i> الأداء والترقيات</h3>
+      <div class="chart-row">
+        <div id="chart-pa" class="chart-cell"></div>
+        <div id="chart-promo" class="chart-cell"></div>
+      </div>
+      <div id="pa-by-location" class="table-wrap"></div>
+    </section>
+
+    <!-- ---------- 6. Data quality ---------- -->
+    <section class="rep-section">
+      <h3 class="rep-h"><i class="fa-solid fa-clipboard-check"></i> اكتمال البيانات</h3>
+      <p class="rep-note">نسبة الحقول المملوءة في السجلات المشمولة بالتقرير — كلما ارتفعت النسبة كانت التقارير أدق.</p>
+      <div id="completeness-table" class="table-wrap"></div>
+    </section>
+
+    <footer class="rep-footer">
+      <span>تم إنشاء هذا التقرير آلياً من نظام إدارة قاعدة بيانات موظفي طاقة غاز</span>
+      <span id="footer-stamp"></span>
+    </footer>
+  </main>
+
+  <script src="js/auth.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/reports.js"></script>
+</body>
+</html>
