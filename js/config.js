@@ -51,7 +51,32 @@ window.COLUMN_DEFINITIONS = [
   { key: "telephone_extension", label: "Telephone Extension", labelAr: "الداخلي", defaultVisible: true },
   { key: "employee_name_ar", label: "أســم الموظف بالعربية", labelAr: "الاسم بالعربي", defaultVisible: true },
   { key: "email", label: "Email", labelAr: "البريد الإلكتروني", defaultVisible: true },
-  { key: "manager", label: "Manager", labelAr: "المدير المباشر", defaultVisible: true }
+  { key: "manager", label: "Manager", labelAr: "المدير المباشر", defaultVisible: true },
+
+  // تقييمات الأداء السنوية (Performance Appraisal) - مخفية افتراضياً من الجدول
+  { key: "pa_2016", label: "PA 2016", labelAr: "تقييم 2016", group: "pa", defaultVisible: false },
+  { key: "pa_2017", label: "PA 2017", labelAr: "تقييم 2017", group: "pa", defaultVisible: false },
+  { key: "pa_2018", label: "PA 2018", labelAr: "تقييم 2018", group: "pa", defaultVisible: false },
+  { key: "pa_2019", label: "PA 2019", labelAr: "تقييم 2019", group: "pa", defaultVisible: false },
+  { key: "pa_2020", label: "PA 2020", labelAr: "تقييم 2020", group: "pa", defaultVisible: false },
+  { key: "pa_2021", label: "PA 2021", labelAr: "تقييم 2021", group: "pa", defaultVisible: false },
+  { key: "pa_2022", label: "PA 2022", labelAr: "تقييم 2022", group: "pa", defaultVisible: false },
+  { key: "pa_2023", label: "PA 2023", labelAr: "تقييم 2023", group: "pa", defaultVisible: false },
+  { key: "pa_2024", label: "PA 2024", labelAr: "تقييم 2024", group: "pa", defaultVisible: false },
+  { key: "pa_2025", label: "PA 2025", labelAr: "تقييم 2025", group: "pa", defaultVisible: false },
+
+  // الترقيات: علامة P في سنة الترقية - مخفية افتراضياً من الجدول
+  { key: "promo_2016", label: "2016", labelAr: "ترقية 2016", group: "promo", defaultVisible: false },
+  { key: "promo_2017", label: "2017", labelAr: "ترقية 2017", group: "promo", defaultVisible: false },
+  { key: "promo_2018", label: "2018", labelAr: "ترقية 2018", group: "promo", defaultVisible: false },
+  { key: "promo_2019", label: "2019", labelAr: "ترقية 2019", group: "promo", defaultVisible: false },
+  { key: "promo_2020", label: "2020", labelAr: "ترقية 2020", group: "promo", defaultVisible: false },
+  { key: "promo_2021", label: "2021", labelAr: "ترقية 2021", group: "promo", defaultVisible: false },
+  { key: "promo_2022", label: "2022", labelAr: "ترقية 2022", group: "promo", defaultVisible: false },
+  { key: "promo_2023", label: "2023", labelAr: "ترقية 2023", group: "promo", defaultVisible: false },
+  { key: "promo_2024", label: "2024", labelAr: "ترقية 2024", group: "promo", defaultVisible: false },
+  { key: "promo_2025", label: "2025", labelAr: "ترقية 2025", group: "promo", defaultVisible: false },
+  { key: "promo_2026", label: "2026", labelAr: "ترقية 2026", group: "promo", defaultVisible: false }
 ];
 
 

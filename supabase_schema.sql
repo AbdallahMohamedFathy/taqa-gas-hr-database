@@ -61,6 +61,36 @@ CREATE POLICY "Allow public delete employee_update_requests"
 ON public.employee_update_requests FOR DELETE 
 TO anon, authenticated
 USING (true);
+
+
+-- =========================================================================
+-- 4. Performance Appraisal (PA) + Promotion columns
+--    PA 2016..2025  = التقييم السنوي (A / B / C / D / E)
+--    promo_2016..2026 = علامة P في سنة الترقية
+-- =========================================================================
+ALTER TABLE public.employees
+    ADD COLUMN IF NOT EXISTS pa_2016 TEXT,
+    ADD COLUMN IF NOT EXISTS pa_2017 TEXT,
+    ADD COLUMN IF NOT EXISTS pa_2018 TEXT,
+    ADD COLUMN IF NOT EXISTS pa_2019 TEXT,
+    ADD COLUMN IF NOT EXISTS pa_2020 TEXT,
+    ADD COLUMN IF NOT EXISTS pa_2021 TEXT,
+    ADD COLUMN IF NOT EXISTS pa_2022 TEXT,
+    ADD COLUMN IF NOT EXISTS pa_2023 TEXT,
+    ADD COLUMN IF NOT EXISTS pa_2024 TEXT,
+    ADD COLUMN IF NOT EXISTS pa_2025 TEXT,
+    ADD COLUMN IF NOT EXISTS promo_2016 TEXT,
+    ADD COLUMN IF NOT EXISTS promo_2017 TEXT,
+    ADD COLUMN IF NOT EXISTS promo_2018 TEXT,
+    ADD COLUMN IF NOT EXISTS promo_2019 TEXT,
+    ADD COLUMN IF NOT EXISTS promo_2020 TEXT,
+    ADD COLUMN IF NOT EXISTS promo_2021 TEXT,
+    ADD COLUMN IF NOT EXISTS promo_2022 TEXT,
+    ADD COLUMN IF NOT EXISTS promo_2023 TEXT,
+    ADD COLUMN IF NOT EXISTS promo_2024 TEXT,
+    ADD COLUMN IF NOT EXISTS promo_2025 TEXT,
+    ADD COLUMN IF NOT EXISTS promo_2026 TEXT;
+
 -- =========================================================================
 -- 5. Normalize spelling variants on existing rows
 --    (نفس الشركة كانت مكتوبة بأكثر من شكل: MASTER GAS / Master Gas ... إلخ)

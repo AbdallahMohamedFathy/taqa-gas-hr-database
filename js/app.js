@@ -18,7 +18,7 @@
     deletingEmployeeId: null,
     editingEmployeeId: null,
     // Column visibility set
-    visibleColumns: new Set(window.COLUMN_DEFINITIONS.map(c => c.key))
+    visibleColumns: new Set(window.COLUMN_DEFINITIONS.filter(c => c.defaultVisible !== false).map(c => c.key))
   };
 
   // DOM Elements Cache
@@ -570,7 +570,7 @@
   });
 
   els.btnResetCols.addEventListener('click', () => {
-    state.visibleColumns = new Set(window.COLUMN_DEFINITIONS.map(c => c.key));
+    state.visibleColumns = new Set(window.COLUMN_DEFINITIONS.filter(c => c.defaultVisible !== false).map(c => c.key));
     initColumnPicker();
     renderTableHeaders();
     loadEmployeesTable();
