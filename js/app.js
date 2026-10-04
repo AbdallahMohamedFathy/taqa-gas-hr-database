@@ -856,10 +856,12 @@
       }
 
       const dateStr = new Date().toISOString().split('T')[0];
-      const colsToExport = state.visibleColumns && state.visibleColumns.size > 0 ? state.visibleColumns : null;
-      const countCols = colsToExport ? colsToExport.size : window.COLUMN_DEFINITIONS.length;
+      // Export the full sheet, not just what the table happens to show: the
+      // appraisal and promotion columns are hidden on screen to keep the table
+      // readable, but a backup/handover file has to carry every field.
+      const countCols = window.COLUMN_DEFINITIONS.length;
 
-      ExcelHandler.exportToExcel(records, `TAQA_Gas_Employees_${dateStr}.xlsx`, colsToExport);
+      ExcelHandler.exportToExcel(records, `TAQA_Gas_Employees_${dateStr}.xlsx`, null);
       
       const hasFilters = !!state.searchQuery || Object.values(state.filters).some(Boolean);
       const filterNote = hasFilters ? ' (حسب نتائج البحث والفلترة)' : '';
