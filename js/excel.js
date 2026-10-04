@@ -6,11 +6,6 @@
     'employee id': 'id',
     'كود الموظف': 'id',
     'الرقم الوظيفي': 'id',
-    's.': 'serial_no',
-    's': 'serial_no',
-    'serial': 'serial_no',
-    'مسلسل': 'serial_no',
-    'م': 'serial_no',
     'hiring type': 'hiring_type',
     'نوع التعيين': 'hiring_type',
     'employee name': 'employee_name',
@@ -156,9 +151,8 @@
     'ترقية 2026': 'promo_2026'
   };
 
-  // 44 Columns Configuration matching Taqa Gas exact Excel palette (Headers + Data Rows)
+  // Columns Configuration matching Taqa Gas exact Excel palette (Headers + Data Rows)
   const EXCEL_COLUMN_CONFIG = [
-    { key: 'serial_no', header: 'S.', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
     { key: 'hiring_type', header: 'Hiring Type', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
     { key: 'id', header: 'ID', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF8DD', dFg: '000000', align: 'center' },
     { key: 'employee_name', header: 'Employee Name', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
@@ -483,9 +477,6 @@
           let val = emp[col.key];
 
           // Auto-fill calculated values if empty
-          if (col.key === 'serial_no' && (!val || val === '')) {
-            val = rIdx + 1;
-          }
           if (col.key === 'yoe' && (!val || val === '') && emp.start_date) {
             val = calculateYOE(emp.start_date, emp.resignation_date);
           }

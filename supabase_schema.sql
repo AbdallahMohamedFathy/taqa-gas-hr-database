@@ -148,3 +148,7 @@ ALTER TABLE public.employee_update_requests ADD COLUMN IF NOT EXISTS submitted_b
 ALTER TABLE public.employee_update_requests ADD COLUMN IF NOT EXISTS manager_id TEXT;
 CREATE INDEX IF NOT EXISTS idx_update_requests_mgr_id ON public.employee_update_requests (manager_id);
 
+-- =========================================================================
+-- 8. Drop serial_no (مسلسل / S.) column completely from employees table
+-- =========================================================================
+ALTER TABLE public.employees DROP COLUMN IF EXISTS serial_no;

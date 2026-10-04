@@ -7,9 +7,8 @@ window.APP_CONFIG = {
   BATCH_SIZE: 100
 };
 
-// Exact order of all 44 columns matching Taqa Gas Excel sheet
+// Exact order of all columns matching Taqa Gas Excel sheet
 window.COLUMN_DEFINITIONS = [
-  { key: "serial_no", label: "S.", labelAr: "مسلسل", defaultVisible: true },
   { key: "hiring_type", label: "Hiring Type", labelAr: "نوع التعيين", defaultVisible: true },
   { key: "id", label: "ID", labelAr: "كود الموظف", isKey: true, defaultVisible: true },
   { key: "employee_name", label: "Employee Name", labelAr: "اسم الموظف (EN)", defaultVisible: true },

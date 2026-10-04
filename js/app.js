@@ -710,20 +710,6 @@
     document.getElementById('inp-id').readOnly = false;
     els.employeeModalTitle.innerHTML = '<i class="fa-solid fa-user-plus text-primary"></i> <span>إضافة موظف جديد</span>';
     openModal(els.modalEmployee);
-
-    // Serial number (S.) is assigned automatically from the employees sequence
-    const serialInp = document.getElementById('inp-serial_no');
-    if (serialInp) {
-      serialInp.value = '';
-      serialInp.placeholder = 'جاري الحساب...';
-      const next = await API.getNextSerialNo();
-      if (next) {
-        serialInp.value = next;
-        serialInp.placeholder = 'يُحسب تلقائياً';
-      } else {
-        serialInp.placeholder = 'يُحسب تلقائياً عند الحفظ';
-      }
-    }
   });
 
   window.editEmployee = async function(id) {
@@ -800,11 +786,6 @@
     formData.forEach((val, key) => {
       employeeData[key] = val ? String(val).trim() : null;
     });
-
-    // New employee with no serial yet: take the next one in the sequence
-    if (!state.editingEmployeeId && !employeeData.serial_no) {
-      employeeData.serial_no = await API.getNextSerialNo();
-    }
 
     // توحيد إملاء أسماء الشركات والقطاعات
     if (typeof window.normalizeEmployeeRecord === 'function') {
