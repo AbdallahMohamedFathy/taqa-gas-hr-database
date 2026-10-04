@@ -95,21 +95,49 @@
   }
 
   window.API = {
+    // Helper to fetch all records for specific columns across Supabase's 1000-row limit
+    async _fetchAllRows(columns) {
+      const step = 1000;
+      let from = 0;
+      let allRows = [];
+      let hasMore = true;
+
+      while (hasMore) {
+        const { data, error } = await client
+          .from('employees')
+          .select(columns)
+          .range(from, from + step - 1);
+
+        if (error) {
+          console.error('Error fetching batch in _fetchAllRows:', error);
+          break;
+        }
+
+        if (data && data.length > 0) {
+          allRows = allRows.concat(data);
+          if (data.length < step) {
+            hasMore = false;
+          } else {
+            from += step;
+          }
+        } else {
+          hasMore = false;
+        }
+      }
+      return allRows;
+    },
+
     // Fetch unique options for dropdown filters
     async getFilterOptions() {
       try {
-        const [compRes, deptRes, statusRes] = await Promise.all([
-          client.from('employees').select('company').not('company', 'is', null).limit(2000),
-          client.from('employees').select('department').not('department', 'is', null).limit(2000),
-          client.from('employees').select('status').not('status', 'is', null).limit(2000)
-        ]);
+        const allData = await this._fetchAllRows('company, department, status');
 
         const unique = (arr, key) => Array.from(new Set((arr || []).map(x => (x[key] || '').trim()).filter(Boolean))).sort();
 
         return {
-          companies: unique(compRes.data, 'company'),
-          departments: unique(deptRes.data, 'department'),
-          statuses: unique(statusRes.data, 'status')
+          companies: unique(allData, 'company'),
+          departments: unique(allData, 'department'),
+          statuses: unique(allData, 'status')
         };
       } catch (err) {
         console.error('Error fetching filter options:', err);
@@ -124,11 +152,9 @@
           .from('employees')
           .select('*', { count: 'exact', head: true });
 
-        const { data: allData, error } = await client
-          .from('employees')
-          .select('company, department, status, gender');
+        const allData = await this._fetchAllRows('company, department, status, resignation_date');
 
-        if (error || !allData) {
+        if (!allData || allData.length === 0) {
           return { total: total || 0, active: 0, companiesCount: 0, departmentsCount: 0 };
         }
 
@@ -137,10 +163,14 @@
         let activeCount = 0;
 
         allData.forEach(row => {
-          if (row.company) companies.add(row.company.trim());
-          if (row.department) departments.add(row.department.trim());
-          const st = (row.status || '').toLowerCase();
-          if (st.includes('active') || st.includes('شغال') || st.includes('قائم') || st === 'personal' || !st.includes('resigned')) {
+          if (row.company && row.company.trim()) companies.add(row.company.trim());
+          if (row.department && row.department.trim()) departments.add(row.department.trim());
+
+          const resig = (row.resignation_date || '').toString().trim();
+          const st = (row.status || '').toLowerCase().trim();
+
+          const isResigned = (resig !== '' && resig !== '-') || st.includes('resigned') || st.includes('مستقيل');
+          if (!isResigned) {
             activeCount++;
           }
         });
@@ -157,47 +187,68 @@
       }
     },
 
-    // Get paginated, searched, and filtered employees
-    async getEmployees({ page = 1, pageSize = 25, searchQuery = '', filters = {}, sortField = 'id', sortAsc = true }) {
+    // Get all searched, filtered, and sorted employees (continuous rows under each other)
+    async getEmployees({ searchQuery = '', filters = {}, sortField = 'id', sortAsc = true } = {}) {
       try {
-        let query = client.from('employees').select('*', { count: 'exact' });
+        const step = 1000;
+        let from = 0;
+        let allData = [];
+        let totalCount = 0;
+        let hasMore = true;
 
-        // Search in multiple columns (ID, English Name, Arabic Name, National ID, Email, Mobile)
-        if (searchQuery && searchQuery.trim()) {
-          const q = searchQuery.trim();
-          query = query.or(`id.ilike.%${q}%,employee_name.ilike.%${q}%,employee_name_ar.ilike.%${q}%,national_id.ilike.%${q}%,email.ilike.%${q}%,mobile_numbers.ilike.%${q}%`);
-        }
+        while (hasMore) {
+          let query = client.from('employees').select('*', { count: 'exact' });
 
-        // Apply filters
-        if (filters.company) {
-          query = query.eq('company', filters.company);
-        }
-        if (filters.department) {
-          query = query.eq('department', filters.department);
-        }
-        if (filters.status) {
-          query = query.eq('status', filters.status);
-        }
-        if (filters.gender) {
-          query = query.eq('gender', filters.gender);
-        }
+          // Search in multiple columns (ID, English Name, Arabic Name, National ID, Email, Mobile)
+          if (searchQuery && searchQuery.trim()) {
+            const q = searchQuery.trim();
+            query = query.or(`id.ilike.%${q}%,employee_name.ilike.%${q}%,employee_name_ar.ilike.%${q}%,national_id.ilike.%${q}%,email.ilike.%${q}%,mobile_numbers.ilike.%${q}%`);
+          }
 
-        // Apply Sorting
-        query = query.order(sortField, { ascending: sortAsc });
+          // Apply filters
+          if (filters.company) {
+            query = query.eq('company', filters.company);
+          }
+          if (filters.department) {
+            query = query.eq('department', filters.department);
+          }
+          if (filters.status) {
+            query = query.eq('status', filters.status);
+          }
+          if (filters.gender) {
+            query = query.eq('gender', filters.gender);
+          }
 
-        // Pagination
-        const from = (page - 1) * pageSize;
-        const to = from + pageSize - 1;
-        query = query.range(from, to);
+          // Apply Sorting
+          if (sortField) {
+            query = query.order(sortField, { ascending: sortAsc });
+          }
 
-        const { data, count, error } = await query;
-        if (error) throw error;
+          // Fetch batch
+          query = query.range(from, from + step - 1);
+
+          const { data, count, error } = await query;
+          if (error) throw error;
+
+          if (totalCount === 0 && typeof count === 'number') {
+            totalCount = count;
+          }
+
+          if (data && data.length > 0) {
+            allData = allData.concat(data);
+            if (data.length < step) {
+              hasMore = false;
+            } else {
+              from += step;
+            }
+          } else {
+            hasMore = false;
+          }
+        }
 
         return {
-          data: data || [],
-          totalCount: count || 0,
-          totalPages: Math.ceil((count || 0) / pageSize),
-          currentPage: page
+          data: allData,
+          totalCount: totalCount || allData.length
         };
       } catch (err) {
         console.error('Error fetching employees:', err);

@@ -245,16 +245,14 @@
             <i class="fa-solid fa-arrows-rotate"></i>
             <span>تحديث</span>
           </button>
-          <div style="font-size: 0.85rem; color: var(--text-muted);">
-            عرض:
-            <select id="page-size-select" class="form-select" style="display: inline-block; width: auto; padding: 0.25rem 0.5rem; font-size: 0.82rem;">
-              <option value="10">10</option>
-              <option value="25" selected>25</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-              <option value="200">200</option>
+          <div style="font-size: 0.85rem; color: var(--text-muted); display: none;">
+            <select id="page-size-select" class="form-select">
+              <option value="all" selected>الكل</option>
             </select>
           </div>
+          <span class="badge" style="background: rgba(14, 116, 144, 0.1); color: var(--primary); font-size: 0.8rem; font-weight: 600; padding: 0.35rem 0.65rem; border-radius: 6px;">
+            <i class="fa-solid fa-list-ol me-1"></i> عرض متصل لكل الصفوف
+          </span>
         </div>
       </div>
 

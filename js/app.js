@@ -382,7 +382,7 @@
     return '';
   }
 
-  // Fetch and Render Table Data
+  // Fetch and Render Table Data (All rows continuously under each other)
   async function loadEmployeesTable() {
     els.tableLoader.style.display = 'block';
     els.tableEmpty.style.display = 'none';
@@ -390,8 +390,6 @@
 
     try {
       const result = await API.getEmployees({
-        page: state.page,
-        pageSize: state.pageSize,
         searchQuery: state.searchQuery,
         filters: state.filters,
         sortField: state.sortField,
@@ -400,15 +398,16 @@
 
       els.tableLoader.style.display = 'none';
       state.totalRecords = result.totalCount;
-      els.filteredCount.textContent = `${result.totalCount.toLocaleString('ar-EG')} سجل`;
+      const count = (result.data || []).length;
+      els.filteredCount.textContent = `${count.toLocaleString('ar-EG')} سجل معروض`;
 
-      if (result.data.length === 0) {
+      if (count === 0) {
         els.tableEmpty.style.display = 'block';
-        updatePagination(0, 0, 0);
+        updatePagination(0, result.totalCount);
         return;
       }
 
-      // Render Rows
+      // Render All Rows under each other
       const rowsHtml = result.data.map((emp) => {
         let cellsHtml = `
           <td class="sticky-action">
@@ -444,7 +443,7 @@
       }).join('');
 
       els.tableBody.innerHTML = rowsHtml;
-      updatePagination(result.currentPage, result.totalPages, result.totalCount);
+      updatePagination(count, result.totalCount);
 
     } catch (err) {
       els.tableLoader.style.display = 'none';
@@ -453,40 +452,32 @@
     }
   }
 
-  // Update Pagination Controls
-  function updatePagination(currentPage, totalPages, totalCount) {
-    if (totalCount === 0) {
+  // Update Footer Summary (Continuous display, all rows under each other)
+  function updatePagination(displayedCount, totalCount) {
+    if (!els.paginationInfo) return;
+    if (totalCount === 0 || displayedCount === 0) {
       els.paginationInfo.textContent = 'لا توجد سجلات لعرضها';
-      els.paginationControls.innerHTML = '';
+      if (els.paginationControls) els.paginationControls.innerHTML = '';
       return;
     }
 
-    const start = (currentPage - 1) * state.pageSize + 1;
-    const end = Math.min(currentPage * state.pageSize, totalCount);
-    els.paginationInfo.textContent = `عرض السجلات من ${start.toLocaleString('ar-EG')} إلى ${end.toLocaleString('ar-EG')} من إجمالي ${totalCount.toLocaleString('ar-EG')}`;
-
-    let pagesHtml = '';
-
-    pagesHtml += `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="window.goToPage(1)" title="الصفحة الأولى"><i class="fa-solid fa-angles-right"></i></button>`;
-    pagesHtml += `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="window.goToPage(${currentPage - 1})" title="السابق"><i class="fa-solid fa-angle-right"></i></button>`;
-
-    let startPage = Math.max(1, currentPage - 2);
-    let endPage = Math.min(totalPages, currentPage + 2);
-
-    for (let p = startPage; p <= endPage; p++) {
-      pagesHtml += `<button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="window.goToPage(${p})">${p}</button>`;
+    if (displayedCount === totalCount) {
+      els.paginationInfo.innerHTML = `<i class="fa-solid fa-circle-check text-success me-1"></i> عرض كافة السجلات كاملة (<strong>${displayedCount.toLocaleString('ar-EG')}</strong> سجل تحت بعضها)`;
+    } else {
+      els.paginationInfo.innerHTML = `<i class="fa-solid fa-filter text-primary me-1"></i> تم تصفية وعرض <strong>${displayedCount.toLocaleString('ar-EG')}</strong> سجل من إجمالي <strong>${totalCount.toLocaleString('ar-EG')}</strong>`;
     }
 
-    pagesHtml += `<button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="window.goToPage(${currentPage + 1})" title="التالي"><i class="fa-solid fa-angle-left"></i></button>`;
-    pagesHtml += `<button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="window.goToPage(${totalPages})" title="الصفحة الأخيرة"><i class="fa-solid fa-angles-left"></i></button>`;
-
-    els.paginationControls.innerHTML = pagesHtml;
+    if (els.paginationControls) {
+      els.paginationControls.innerHTML = `
+        <button class="page-btn" onclick="document.querySelector('.table-responsive')?.scrollTo({top: 0, behavior: 'smooth'})" title="الرجوع للأعلى" style="width: auto; padding: 0.35rem 0.85rem; border-radius: 6px; font-size: 0.82rem; display: flex; align-items: center; gap: 0.4rem; background: #ffffff; border: 1px solid #cbd5e1; cursor: pointer;">
+          <i class="fa-solid fa-arrow-up text-primary"></i>
+          <span>الرجوع لأعلى الجدول</span>
+        </button>
+      `;
+    }
   }
 
-  window.goToPage = function(pageNumber) {
-    state.page = pageNumber;
-    loadEmployeesTable();
-  };
+  window.goToPage = function() {};
 
   // Debounced Live Search
   let searchTimeout = null;
@@ -494,7 +485,6 @@
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
       state.searchQuery = e.target.value.trim();
-      state.page = 1;
       loadEmployeesTable();
     }, 350);
   });
@@ -506,7 +496,6 @@
       state.filters.department = els.filterDepartment.value;
       state.filters.status = els.filterStatus.value;
       state.filters.gender = els.filterGender.value;
-      state.page = 1;
       loadEmployeesTable();
     });
   });
@@ -520,17 +509,16 @@
     els.filterGender.value = '';
     state.searchQuery = '';
     state.filters = { company: '', department: '', status: '', gender: '' };
-    state.page = 1;
     loadEmployeesTable();
     showToast('تمت إعادة ضبط جميع الفلاتر', 'info');
   });
 
-  // Page Size Change
-  els.pageSizeSelect.addEventListener('change', (e) => {
-    state.pageSize = parseInt(e.target.value, 10);
-    state.page = 1;
-    loadEmployeesTable();
-  });
+  // Page Size Change (Legacy safeguard)
+  if (els.pageSizeSelect) {
+    els.pageSizeSelect.addEventListener('change', () => {
+      loadEmployeesTable();
+    });
+  }
 
   // Refresh Button
   els.btnRefresh.addEventListener('click', () => {
