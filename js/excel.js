@@ -153,70 +153,71 @@
 
   // Columns Configuration matching Taqa Gas exact Excel palette (Headers + Data Rows)
   const EXCEL_COLUMN_CONFIG = [
-    { key: 'hiring_type', header: 'Hiring Type', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
-    { key: 'id', header: 'ID', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF8DD', dFg: '000000', align: 'center' },
-    { key: 'employee_name', header: 'Employee Name', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
-    { key: 'job_post', header: 'Job Post', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
-    { key: 'job_title', header: 'Jop Title', hBg: 'FF0000', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
-    { key: 'managerial_level', header: 'Mangerial Level', hBg: 'FF0000', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
-    { key: 'job_tree', header: 'Job Tree', hBg: 'FF0000', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
-    { key: 'company_sector', header: 'Company\n(Sector)', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFEB', dFg: '000000', align: 'center' },
-    { key: 'company', header: 'Company', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'A9D08E', dFg: '000000', align: 'center' },
-    { key: 'costed_by_company', header: 'Costed by \n(Company)', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFEB', dFg: '000000', align: 'center' },
-    { key: 'costed_by_sector', header: 'Costed by \n(Sector)', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFEB', dFg: '000000', align: 'center' },
-    { key: 'locations', header: 'Locations', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFEB', dFg: '000000', align: 'left' },
-    { key: 'sub_location', header: 'Sub-Location', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFEB', dFg: '000000', align: 'left' },
-    { key: 'division', header: 'Division', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
-    { key: 'department', header: 'Department', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
-    { key: 'sub_department', header: 'Sub-Department', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
-    { key: 'qalaa_department', header: 'Qalaa Department', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
-    { key: 'qalaa_group_functions', header: 'Qalaa Group Functions', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
-    { key: 'skilled_unskilled', header: 'Skilled / Unskilled \n(Second Level)', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'center' },
-    { key: 'company_level', header: 'Company \nLevel', hBg: '002060', hFg: 'FFFFF3C9', dBg: '262626', dFg: '5B9BD5', align: 'center' },
-    { key: 'taqa_level_grade', header: 'TAQA Level (Grade)', hBg: 'FF0000', hFg: 'FFFFF3C9', dBg: '262626', dFg: '5B9BD5', align: 'center' },
-    { key: 'qalaa_job_group', header: 'Qalaa Job Group', hBg: '002060', hFg: 'FFFFF3C9', dBg: '262626', dFg: '5B9BD5', align: 'center' },
-    { key: 'start_date', header: 'Start Date', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF9E5', dFg: '000000', align: 'center' },
-    { key: 'yoe', header: 'YOE', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'A9D08E', dFg: '000000', align: 'center' },
-    { key: 'resignation_date', header: 'Resignation Date', hBg: 'C00000', hFg: 'FFFFF3C9', dBg: 'C00000', dFg: 'FFFFFF', align: 'center' },
-    { key: 'gender', header: 'Gender', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'center' },
-    { key: 'employment_type', header: 'Employment Type', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'center' },
-    { key: 'type_of_contract', header: 'Type of Contract', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF6DD', dFg: '000000', align: 'left' },
-    { key: 'birth_date', header: 'Birth Date', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF9E5', dFg: '000000', align: 'center' },
-    { key: 'birth_month', header: 'Birth Month', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF9E5', dFg: '000000', align: 'center' },
-    { key: 'age', header: 'Age', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'A9D08E', dFg: '000000', align: 'center' },
-    { key: 'national_id', header: 'National ID', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF9E5', dFg: '000000', align: 'center' },
-    { key: 'mobile_numbers', header: 'Mobile Numbers', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFF9E5', dFg: '000000', align: 'center' },
-    { key: 'insurance_number', header: 'Insurance Number', hBg: 'FF0000', hFg: 'FFFFF3C9', dBg: 'FFF9E5', dFg: '000000', align: 'center' },
-    { key: 'bank_name', header: 'Bank Name', hBg: 'FFEBEB', hFg: '6C0000', dBg: 'FFF7F7', dFg: '6C0000', align: 'center' },
-    { key: 'status', header: 'Status', hBg: 'FFEBEB', hFg: '6C0000', dBg: 'FFF7F7', dFg: '6C0000', align: 'center' },
-    { key: 'account_numbers', header: 'Account Numbers', hBg: 'FFEBEB', hFg: '6C0000', dBg: 'FFF7F7', dFg: '6C0000', align: 'center' },
-    { key: 'floor', header: 'Floor', hBg: '285E6A', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
-    { key: 'telephone_extension', header: 'Telephone Extension', hBg: '285E6A', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
-    { key: 'employee_name_ar', header: 'أســم الموظف بالعربية', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'right' },
-    { key: 'email', header: 'Email', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'left' },
-    { key: 'manager', header: 'Manager', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'left' },
-    { key: 'manager_id', header: 'Id manager', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
-    { key: 'pa_2016', header: 'PA 2016', hBg: '7030A0', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
-    { key: 'pa_2017', header: 'PA 2017', hBg: '7030A0', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
-    { key: 'pa_2018', header: 'PA 2018', hBg: '7030A0', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
-    { key: 'pa_2019', header: 'PA 2019', hBg: '7030A0', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
-    { key: 'pa_2020', header: 'PA 2020', hBg: '7030A0', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
-    { key: 'pa_2021', header: 'PA 2021', hBg: '7030A0', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
-    { key: 'pa_2022', header: 'PA 2022', hBg: '7030A0', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
-    { key: 'pa_2023', header: 'PA 2023', hBg: '7030A0', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
-    { key: 'pa_2024', header: 'PA 2024', hBg: '7030A0', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
-    { key: 'pa_2025', header: 'PA 2025', hBg: '7030A0', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
-    { key: 'promo_2016', header: '2016', hBg: '00B050', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
-    { key: 'promo_2017', header: '2017', hBg: '00B050', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
-    { key: 'promo_2018', header: '2018', hBg: '00B050', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
-    { key: 'promo_2019', header: '2019', hBg: '00B050', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
-    { key: 'promo_2020', header: '2020', hBg: '00B050', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
-    { key: 'promo_2021', header: '2021', hBg: '00B050', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
-    { key: 'promo_2022', header: '2022', hBg: '00B050', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
-    { key: 'promo_2023', header: '2023', hBg: '00B050', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
-    { key: 'promo_2024', header: '2024', hBg: '00B050', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
-    { key: 'promo_2025', header: '2025', hBg: '00B050', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
-    { key: 'promo_2026', header: '2026', hBg: '00B050', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' }
+    { key: 'hiring_type', header: 'Hiring Type', hBg: '002060', hFg: 'FFF3C9', hSz: 8, dBg: '3F3F3F', dFg: 'FFFFFF', dSz: 9, align: 'center', width: 12.3 },
+    { key: 'id', header: 'ID', hBg: '002060', hFg: 'FFF3C9', hSz: 8, dBg: 'FFF8DD', dFg: '333F4F', dSz: 9, align: 'center', width: 6.9 },
+    { key: 'employee_name', header: 'Employee Name', hBg: '002060', hFg: 'FFF3C9', hSz: 9, dBg: 'FFF6DD', dFg: '333F4F', dSz: 8, align: 'center', width: 43.9 },
+    { key: 'job_post', header: 'Job Post', hBg: '002060', hFg: 'FFF3C9', hSz: 9, dBg: 'FFF6DD', dFg: '333F4F', dSz: 8, align: 'center', width: 60.1 },
+    { key: 'job_title', header: 'Jop Title', hBg: 'FF0000', hFg: 'FFF3C9', hSz: 8, dBg: 'FFF6DD', dFg: '333F4F', dSz: 8, align: 'center', width: 23.4 },
+    { key: 'managerial_level', header: 'Mangerial Level', hBg: 'FF0000', hFg: 'FFF3C9', hSz: 8, dBg: 'FFF6DD', dFg: '333F4F', dSz: 8, align: 'center', width: 11.6 },
+    { key: 'job_tree', header: 'Job Tree ', hBg: 'FF0000', hFg: 'FFF3C9', hSz: 8, dBg: 'FFF6DD', dFg: '333F4F', dSz: 8, align: 'center', width: 15.7 },
+    { key: 'company_sector', header: 'Company\n(Sector)', hBg: '002060', hFg: 'FFF3C9', hSz: 8, dBg: 'FFFFEB', dFg: '333F4F', dSz: 8, align: 'center', width: 11.0 },
+    { key: 'company', header: 'Company', hBg: '002060', hFg: 'FFF3C9', hSz: 9, dBg: 'DADADA', dFg: '333F4F', dSz: 8, align: 'center', width: 12.0 },
+    { key: 'costed_by_company', header: 'Costed by \n(Company)', hBg: '002060', hFg: 'FFF3C9', hSz: 8, dBg: 'FFFFEB', dFg: '333F4F', dSz: 8, align: 'center', width: 11.9 },
+    { key: 'costed_by_sector', header: 'Costed by \n(Sector)', hBg: '002060', hFg: 'FFF3C9', hSz: 8, dBg: 'FFFFEB', dFg: '333F4F', dSz: 8, align: 'center', width: 11.6 },
+    { key: 'locations', header: 'Locations', hBg: '002060', hFg: 'FFF3C9', hSz: 9, dBg: 'FFFFEB', dFg: '333F4F', dSz: 8, align: 'center', width: 11.9 },
+    { key: 'sub_location', header: 'Sub-Location ', hBg: '002060', hFg: 'FFF3C9', hSz: 8, dBg: 'FFFFEB', dFg: '333F4F', dSz: 8, align: 'center', width: 26.6 },
+    { key: 'division', header: 'Division', hBg: '002060', hFg: 'FFF3C9', hSz: 9, dBg: 'FFF6DD', dFg: '333F4F', dSz: 8, align: 'center', width: 15.7 },
+    { key: 'department', header: 'Department', hBg: '002060', hFg: 'FFF3C9', hSz: 8, dBg: 'FFF6DD', dFg: '333F4F', dSz: 8, align: 'center', width: 31.1 },
+    { key: 'sub_department', header: 'Sub-Department ', hBg: '002060', hFg: 'FFF3C9', hSz: 9, dBg: 'FFF6DD', dFg: '333F4F', dSz: 8, align: 'center', width: 21.1 },
+    { key: 'qalaa_department', header: 'Qalaa Department ', hBg: '002060', hFg: 'FFF3C9', hSz: 8, dBg: 'FFF6DD', dFg: '333F4F', dSz: 8, align: 'center', width: 18.6 },
+    { key: 'qalaa_group_functions', header: 'Qalaa Group Functions ', hBg: '002060', hFg: 'FFF3C9', hSz: 8, dBg: 'FFF6DD', dFg: '333F4F', dSz: 8, align: 'center', width: 14.0 },
+    { key: 'skilled_unskilled', header: 'Skilled / Unskilled \n(Second Level)', hBg: '002060', hFg: 'FFF3C9', hSz: 8, dBg: 'FFF6DD', dFg: '333F4F', dSz: 8, align: 'center', width: 16.6 },
+    { key: 'company_level', header: 'Company \nLevel', hBg: '002060', hFg: 'FFF3C9', hSz: 8, dBg: '262626', dFg: '000000', dSz: 8, align: 'center', width: 11.4 },
+    { key: 'taqa_level_grade', header: 'TAQA Level (Grade)', hBg: 'FF0000', hFg: 'FFF3C9', hSz: 8, dBg: '262626', dFg: '000000', dSz: 8, align: 'center', width: 12.6 },
+    { key: 'qalaa_job_group', header: 'Qalaa Job Group', hBg: '002060', hFg: 'FFF3C9', hSz: 8, dBg: '262626', dFg: '000000', dSz: 8, align: 'center', width: 15.4 },
+    { key: 'start_date', header: 'Start Date', hBg: '002060', hFg: 'FFF3C9', hSz: 8, dBg: 'FFF9E5', dFg: '333F4F', dSz: 8, align: 'center', width: 11.6 },
+    { key: 'yoe', header: 'YOE', hBg: '002060', hFg: 'FFF3C9', hSz: 8, dBg: 'C5DEB5', dFg: '385623', dSz: 8, align: 'center', width: 7.6 },
+    { key: 'resignation_date', header: 'Resignation Date', hBg: 'C00000', hFg: 'FFF3C9', hSz: 8, dBg: 'C00000', dFg: '385623', dSz: 8, align: 'center', width: 15.7 },
+    { key: 'gender', header: 'Gender', hBg: '002060', hFg: 'FFF3C9', hSz: 8, dBg: 'FFF6DD', dFg: '333F4F', dSz: 8, align: 'center', width: 9.7 },
+    { key: 'employment_type', header: 'Employment Type', hBg: '002060', hFg: 'FFF3C9', hSz: 8, dBg: 'FFF6DD', dFg: '333F4F', dSz: 8, align: 'center', width: 16.4 },
+    { key: 'type_of_contract', header: 'Type of Contract', hBg: '002060', hFg: 'FFF3C9', hSz: 8, dBg: 'FFF6DD', dFg: '333F4F', dSz: 8, align: 'center', width: 15.6 },
+    { key: 'birth_date', header: 'Birth Date', hBg: '002060', hFg: 'FFF3C9', hSz: 8, dBg: 'FFF9E5', dFg: '333F4F', dSz: 8, align: 'center', width: 11.6 },
+    { key: 'birth_month', header: 'Birth Month', hBg: '002060', hFg: 'FFF3C9', hSz: 8, dBg: 'FFF9E5', dFg: '333F4F', dSz: 9, align: 'center', width: 12.9 },
+    { key: 'age', header: 'Age', hBg: '002060', hFg: 'FFF3C9', hSz: 8, dBg: 'C5DEB5', dFg: '385623', dSz: 8, align: 'center', width: 10.4 },
+    { key: 'national_id', header: 'National ID', hBg: '002060', hFg: 'FFF3C9', hSz: 8, dBg: 'FFF9E5', dFg: '333F4F', dSz: 8, align: 'center', width: 13.4 },
+    { key: 'mobile_numbers', header: 'Mobile Numbers', hBg: '002060', hFg: 'FFF3C9', hSz: 8, dBg: 'FFF9E5', dFg: '333F4F', dSz: 8, align: 'center', width: 18.4 },
+    { key: 'insurance_number', header: 'Insurance Number', hBg: 'FF0000', hFg: 'FFF3C9', hSz: 8, dBg: 'FFF9E5', dFg: '333F4F', dSz: 8, align: 'center', width: 11.6 },
+    { key: 'bank_name', header: 'Bank Name', hBg: 'FFEBEB', hFg: '6C0000', hSz: 8, dBg: 'FFF7F7', dFg: '6C0000', dSz: 8, align: 'center', width: 12.3 },
+    { key: 'status', header: 'Status', hBg: 'FFEBEB', hFg: '6C0000', hSz: 8, dBg: 'FFF7F7', dFg: '6C0000', dSz: 8, align: 'center', width: 9.1 },
+    { key: 'account_numbers', header: 'Account Numbers', hBg: 'FFEBEB', hFg: '6C0000', hSz: 8, dBg: 'FFF7F7', dFg: '6C0000', dSz: 8, align: 'center', width: 22.1 },
+    { key: 'floor', header: 'Floor', hBg: '595959', hFg: 'FFFFFF', hSz: 9, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center', width: 8.9 },
+    { key: 'telephone_extension', header: 'Telephone Extension', hBg: '595959', hFg: 'FFFFFF', hSz: 9, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center', width: 13.0 },
+    { key: 'employee_name_ar', header: 'أســم الموظف بالعربية', hBg: '002060', hFg: 'FFF3C9', hSz: 8, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center', width: 25.7 },
+    { key: 'email', header: 'Email', hBg: '002060', hFg: 'FFF3C9', hSz: 8, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center', width: 23.1 },
+    { key: 'manager', header: 'Manager', hBg: '002060', hFg: 'FFF3C9', hSz: 9, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center', width: 20.1 },
+    { key: 'manager_id', header: 'Id manager', hBg: '002060', hFg: 'FFF3C9', hSz: 9, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center', width: 20.1 },
+    { key: 'pa_2016', header: 'PA 2016', hBg: 'A365D1', hFg: 'FFFFFF', hSz: 11, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center', width: 12.1 },
+    { key: 'pa_2017', header: 'PA 2017', hBg: 'A365D1', hFg: 'FFFFFF', hSz: 11, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center', width: 13.0 },
+    { key: 'pa_2018', header: 'PA 2018', hBg: 'A365D1', hFg: 'FFFFFF', hSz: 11, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center', width: 13.0 },
+    { key: 'pa_2019', header: 'PA 2019', hBg: 'A365D1', hFg: 'FFFFFF', hSz: 11, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center', width: 13.0 },
+    { key: 'pa_2020', header: 'PA 2020', hBg: 'A365D1', hFg: 'FFFFFF', hSz: 11, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center', width: 13.0 },
+    { key: 'pa_2021', header: 'PA 2021', hBg: 'A365D1', hFg: 'FFFFFF', hSz: 11, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center', width: 13.0 },
+    { key: 'pa_2022', header: 'PA 2022', hBg: 'A365D1', hFg: 'FFFFFF', hSz: 11, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center', width: 13.0 },
+    { key: 'pa_2023', header: 'PA 2023', hBg: 'A365D1', hFg: 'FFFFFF', hSz: 11, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center', width: 13.0 },
+    { key: 'pa_2024', header: 'PA 2024', hBg: 'A365D1', hFg: 'FFFFFF', hSz: 11, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center', width: 13.0 },
+    { key: 'pa_2025', header: 'PA 2025', hBg: 'A365D1', hFg: 'FFFFFF', hSz: 11, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center', width: 13.0 },
+    { key: 'promo_2016', header: '2016', hBg: '70AD47', hFg: 'FFFFFF', hSz: 11, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center', width: 9.4 },
+    { key: 'promo_2017', header: '2017', hBg: '70AD47', hFg: 'FFFFFF', hSz: 11, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center', width: 13.0 },
+    { key: 'promo_2018', header: '2018', hBg: '70AD47', hFg: 'FFFFFF', hSz: 11, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center', width: 13.0 },
+    { key: 'promo_2019', header: '2019', hBg: '70AD47', hFg: 'FFFFFF', hSz: 11, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center', width: 13.0 },
+    { key: 'promo_2020', header: '2020', hBg: '70AD47', hFg: 'FFFFFF', hSz: 11, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center', width: 13.0 },
+    { key: 'promo_2021', header: '2021', hBg: '70AD47', hFg: 'FFFFFF', hSz: 11, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center', width: 13.0 },
+    { key: 'promo_2022', header: '2022', hBg: '70AD47', hFg: 'FFFFFF', hSz: 11, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center', width: 13.0 },
+    { key: 'promo_2023', header: '2023', hBg: '70AD47', hFg: 'FFFFFF', hSz: 11, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center', width: 13.0 },
+    { key: 'promo_2024', header: '2024', hBg: '70AD47', hFg: 'FFFFFF', hSz: 11, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center', width: 13.0 },
+    { key: 'promo_2025', header: '2025', hBg: '70AD47', hFg: 'FFFFFF', hSz: 11, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center', width: 13.0 },
+    { key: 'promo_2026', header: '2026', hBg: '70AD47', hFg: 'FFFFFF', hSz: 11, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center', width: 13.0 }
+  
   ];
 
   function cleanHeader(raw) {
@@ -506,22 +507,14 @@
       // Create Worksheet
       const worksheet = XLSX.utils.aoa_to_sheet(dataRows);
 
-      // Set Row Heights: Header is 38pt, Data rows 20pt
-      worksheet['!rows'] = [
-        { hpt: 38 },
-        ...records.map(() => ({ hpt: 20 }))
-      ];
+      // Row heights as in the master sheet (header 24pt, data rows default)
+      worksheet['!rows'] = [{ hpt: 24 }];
 
-      // Auto-compute column widths based on exported columns
-      const colWidths = exportColumns.map(col => {
-        let maxLen = Math.max(col.header.length, 12);
-        if (col.header.includes('\n')) {
-          const parts = col.header.split('\n');
-          maxLen = Math.max(...parts.map(p => p.length), 12);
-        }
-        return { wch: Math.min(Math.max(maxLen + 4, 15), 32) };
-      });
-      worksheet['!cols'] = colWidths;
+      // Column widths copied from the master sheet, not guessed from text length
+      worksheet['!cols'] = exportColumns.map(col => ({ wch: col.width || 12 }));
+
+      // Freeze the header row and the first four identity columns
+      worksheet['!freeze'] = { xSplit: 4, ySplit: 1 };
 
       // Apply cell styling to ALL cells (Headers + Data Rows)
       const range = XLSX.utils.decode_range(worksheet['!ref']);
@@ -535,7 +528,7 @@
             worksheet[cellRef] = { t: 's', v: '' };
           }
           const cell = worksheet[cellRef];
-          const colConfig = exportColumns[C] || { hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'left' };
+          const colConfig = exportColumns[C] || { hBg: '002060', hFg: 'FFF3C9', hSz: 8, dBg: 'FFFFFF', dFg: '000000', dSz: 8, align: 'center' };
 
           if (isHeader) {
             // Header Row Styling
@@ -546,7 +539,7 @@
               },
               font: {
                 name: 'Calibri',
-                sz: 10,
+                sz: colConfig.hSz || 8,
                 bold: true,
                 color: { rgb: colConfig.hFg }
               },
@@ -571,7 +564,7 @@
               },
               font: {
                 name: 'Calibri',
-                sz: 9.5,
+                sz: colConfig.dSz || 8,
                 color: { rgb: colConfig.dFg }
               },
               alignment: {
@@ -591,7 +584,7 @@
 
       // Build Workbook & Trigger Download
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Employees');
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'TG Database');
 
       XLSX.writeFile(workbook, filename);
     }
