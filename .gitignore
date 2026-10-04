@@ -3,3 +3,6 @@ node_modules/
 .system_generated/
 *.log
 ~$*
+
+# Local Excel database exports (contain employee personal data)
+*.xlsx
