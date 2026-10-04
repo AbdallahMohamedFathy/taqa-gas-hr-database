@@ -958,19 +958,28 @@
   // LINK & QR CODE GENERATOR WORKFLOW
   // ==========================================
   let qrCodeInstance = null;
-  const linkGenState = {
-    type: 'general', // 'general' or 'specific'
-    specificId: ''
-  };
 
   const linkTabs = {
     general: document.getElementById('tab-link-general'),
-    specific: document.getElementById('tab-link-specific')
+    specific: document.getElementById('tab-link-specific'),
+    manager: document.getElementById('tab-link-manager')
   };
   const specificBox = document.getElementById('specific-emp-box');
   const specificInput = document.getElementById('gen-specific-id');
   const btnFetchSpecific = document.getElementById('btn-fetch-specific-emp');
   const specificPreview = document.getElementById('specific-emp-preview');
+
+  // Manager Elements
+  const managerBox = document.getElementById('manager-emp-box');
+  const managerInput = document.getElementById('gen-manager-id');
+  const btnFetchManagerTeam = document.getElementById('btn-fetch-manager-team');
+  const managerInfoPreview = document.getElementById('manager-info-preview');
+  const managerTeamContainer = document.getElementById('manager-team-container');
+  const managerTeamList = document.getElementById('manager-team-list');
+  const managerTeamCount = document.getElementById('manager-team-count');
+  const btnTeamSelectAll = document.getElementById('btn-team-select-all');
+  const btnTeamClearAll = document.getElementById('btn-team-clear-all');
+
   const fieldsCheckboxesContainer = document.getElementById('gen-fields-checkboxes');
   const qrDisplay = document.getElementById('qr-code-display');
   const genUrlInput = document.getElementById('gen-url-input');
@@ -981,8 +990,17 @@
   // Quick preset buttons
   const btnQuickContact = document.getElementById('btn-quick-contact');
   const btnQuickIdentity = document.getElementById('btn-quick-identity');
+  const btnQuickAppraisal = document.getElementById('btn-quick-appraisal');
   const btnQuickAll = document.getElementById('btn-quick-all');
   const btnQuickClear = document.getElementById('btn-quick-clear');
+
+  let linkGenState = {
+    type: 'general', // 'general', 'specific', 'manager'
+    specificId: '',
+    managerId: '',
+    teamEmployees: [],
+    selectedTeamIds: new Set()
+  };
 
   function getSelectedFieldKeys() {
     const checked = [];
@@ -1011,6 +1029,12 @@
     });
   }
 
+  if (btnQuickAppraisal) {
+    btnQuickAppraisal.addEventListener('click', () => {
+      setCheckedFields(['pa_2024', 'pa_2025', 'promo_2024', 'promo_2025', 'promo_2026', 'job_title', 'job_post', 'managerial_level']);
+    });
+  }
+
   if (btnQuickAll) {
     btnQuickAll.addEventListener('click', () => {
       fieldsCheckboxesContainer.querySelectorAll('input[type="checkbox"]').forEach(chk => chk.checked = true);
@@ -1026,30 +1050,34 @@
   }
 
   // Tab switching
-  if (linkTabs.general && linkTabs.specific) {
-    linkTabs.general.addEventListener('click', () => {
-      linkTabs.general.classList.add('active');
-      linkTabs.specific.classList.remove('active');
-      specificBox.style.display = 'none';
-      linkGenState.type = 'general';
-      updateGeneratedLinkAndQR();
+  function switchLinkTab(type) {
+    linkGenState.type = type;
+    Object.keys(linkTabs).forEach(k => {
+      if (linkTabs[k]) linkTabs[k].classList.toggle('active', k === type);
     });
 
-    linkTabs.specific.addEventListener('click', () => {
-      linkTabs.specific.classList.add('active');
-      linkTabs.general.classList.remove('active');
-      specificBox.style.display = 'block';
-      linkGenState.type = 'specific';
-      specificInput.focus();
-      updateGeneratedLinkAndQR();
-    });
+    if (specificBox) specificBox.style.display = type === 'specific' ? 'block' : 'none';
+    if (managerBox) managerBox.style.display = type === 'manager' ? 'flex' : 'none';
+
+    if (type === 'manager') {
+      if (managerInput) managerInput.focus();
+      // Preset appraisal fields for convenience
+      setCheckedFields(['pa_2024', 'pa_2025', 'promo_2024', 'promo_2025', 'promo_2026', 'job_title', 'job_post', 'managerial_level']);
+    } else if (type === 'specific') {
+      if (specificInput) specificInput.focus();
+    }
+    updateGeneratedLinkAndQR();
   }
+
+  if (linkTabs.general) linkTabs.general.addEventListener('click', () => switchLinkTab('general'));
+  if (linkTabs.specific) linkTabs.specific.addEventListener('click', () => switchLinkTab('specific'));
+  if (linkTabs.manager) linkTabs.manager.addEventListener('click', () => switchLinkTab('manager'));
 
   // Specific employee input change
   if (specificInput) {
     specificInput.addEventListener('input', () => {
       linkGenState.specificId = specificInput.value.trim();
-      specificPreview.style.display = 'none';
+      if (specificPreview) specificPreview.style.display = 'none';
       updateGeneratedLinkAndQR();
     });
   }
@@ -1077,6 +1105,115 @@
       } catch (e) {
         showToast('خطأ أثناء فحص الكود', 'error');
       }
+    });
+  }
+
+  // Manager Input & Team Fetching
+  async function fetchAndRenderManagerTeam() {
+    const mgrId = managerInput.value.trim();
+    if (!mgrId) {
+      showToast('يرجى إدخال كود المدير المباشر (Id manager)', 'warning');
+      return;
+    }
+
+    btnFetchManagerTeam.disabled = true;
+    btnFetchManagerTeam.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري البحث...</span>';
+
+    try {
+      const { manager, team } = await API.getTeamByManager(mgrId);
+      btnFetchManagerTeam.disabled = false;
+      btnFetchManagerTeam.innerHTML = '<i class="fa-solid fa-users-viewfinder"></i> <span>جلب فريق العمل</span>';
+
+      if (!manager && (!team || team.length === 0)) {
+        managerInfoPreview.textContent = `لم يتم العثور على مدير أو موظفين مسجلين بكود المدير: ${mgrId}`;
+        managerInfoPreview.style.display = 'block';
+        managerInfoPreview.style.color = '#dc2626';
+        managerTeamContainer.style.display = 'none';
+        return;
+      }
+
+      linkGenState.managerId = mgrId;
+      linkGenState.teamEmployees = team || [];
+      linkGenState.selectedTeamIds = new Set((team || []).map(e => String(e.id)));
+
+      const mgrName = manager ? (manager.employee_name_ar || manager.employee_name) : mgrId;
+      managerInfoPreview.innerHTML = `<i class="fa-solid fa-circle-check text-success"></i> المدير: <strong>${mgrName}</strong> (${manager?.job_title || manager?.job_post || 'مدير مباشر'})`;
+      managerInfoPreview.style.display = 'block';
+      managerInfoPreview.style.color = '#028090';
+
+      // Render Team list
+      if (team && team.length > 0) {
+        managerTeamCount.textContent = `${team.length.toLocaleString('ar-EG')} موظف`;
+        managerTeamList.innerHTML = team.map(emp => `
+          <label style="display: flex; align-items: center; justify-content: space-between; padding: 0.35rem 0.5rem; border-radius: 4px; border-bottom: 1px dashed #e2e8f0; cursor: pointer; font-size: 0.85rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <input type="checkbox" class="team-member-chk" value="${emp.id}" checked>
+              <span><strong>${emp.employee_name_ar || emp.employee_name}</strong> <small style="color: #64748b;">(${emp.job_title || emp.job_post || 'موظف'})</small></span>
+            </div>
+            <span style="font-family: monospace; font-size: 0.78rem; font-weight: 700; color: var(--primary);">${emp.id}</span>
+          </label>
+        `).join('');
+
+        // Attach change listeners to team checkboxes
+        managerTeamList.querySelectorAll('.team-member-chk').forEach(chk => {
+          chk.addEventListener('change', () => {
+            if (chk.checked) {
+              linkGenState.selectedTeamIds.add(chk.value);
+            } else {
+              linkGenState.selectedTeamIds.delete(chk.value);
+            }
+            updateGeneratedLinkAndQR();
+          });
+        });
+
+        managerTeamContainer.style.display = 'block';
+        showToast(`تم العثور على ${team.length} موظف تابع للمدير`, 'success');
+      } else {
+        managerTeamCount.textContent = '0 موظف';
+        managerTeamList.innerHTML = '<div style="color: #64748b; font-size: 0.82rem; text-align: center; padding: 0.5rem;">لا يوجد موظفون مسجلون تحت هذا المدير بعد</div>';
+        managerTeamContainer.style.display = 'block';
+      }
+
+      updateGeneratedLinkAndQR();
+
+    } catch (err) {
+      btnFetchManagerTeam.disabled = false;
+      btnFetchManagerTeam.innerHTML = '<i class="fa-solid fa-users-viewfinder"></i> <span>جلب فريق العمل</span>';
+      showToast('خطأ أثناء جلب فريق العمل: ' + err.message, 'error');
+    }
+  }
+
+  if (btnFetchManagerTeam) btnFetchManagerTeam.addEventListener('click', fetchAndRenderManagerTeam);
+  if (managerInput) {
+    managerInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        fetchAndRenderManagerTeam();
+      }
+    });
+    managerInput.addEventListener('input', () => {
+      linkGenState.managerId = managerInput.value.trim();
+      updateGeneratedLinkAndQR();
+    });
+  }
+
+  if (btnTeamSelectAll) {
+    btnTeamSelectAll.addEventListener('click', () => {
+      managerTeamList.querySelectorAll('.team-member-chk').forEach(chk => {
+        chk.checked = true;
+        linkGenState.selectedTeamIds.add(chk.value);
+      });
+      updateGeneratedLinkAndQR();
+    });
+  }
+
+  if (btnTeamClearAll) {
+    btnTeamClearAll.addEventListener('click', () => {
+      managerTeamList.querySelectorAll('.team-member-chk').forEach(chk => {
+        chk.checked = false;
+        linkGenState.selectedTeamIds.delete(chk.value);
+      });
+      updateGeneratedLinkAndQR();
     });
   }
 
@@ -1111,6 +1248,12 @@
 
     if (linkGenState.type === 'specific' && linkGenState.specificId) {
       params.set('id', linkGenState.specificId);
+    } else if (linkGenState.type === 'manager' && linkGenState.managerId) {
+      params.set('manager_id', linkGenState.managerId);
+      // If subset of team is selected, specify the exact IDs
+      if (linkGenState.selectedTeamIds.size > 0 && linkGenState.selectedTeamIds.size < linkGenState.teamEmployees.length) {
+        params.set('emps', Array.from(linkGenState.selectedTeamIds).join(','));
+      }
     }
 
     const fullUrl = params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl;
@@ -1438,7 +1581,10 @@ CREATE POLICY "Allow public all employee_update_requests" ON public.employee_upd
             <td style="color: var(--text-muted); font-size: 0.78rem;">${dateDisplay}</td>
             <td>
               <div style="font-weight: 700; color: var(--navy-900);">${req.employee_name || 'موظف'}</div>
-              <div style="font-size: 0.75rem; color: var(--primary); font-weight: 600;">كود: ${req.employee_id}</div>
+              <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; margin-top: 2px;">
+                <span style="font-size: 0.75rem; color: var(--primary); font-weight: 600;">كود: ${req.employee_id}</span>
+                ${req.submitted_by === 'manager' ? `<span style="background: rgba(2, 128, 144, 0.1); color: #028090; font-size: 0.7rem; font-weight: 600; padding: 1px 6px; border-radius: 4px;" title="تم إرسال هذا التعديل بواسطة المدير المباشر"><i class="fa-solid fa-user-tie"></i> بواسطة المدير (${req.manager_id || ''})</span>` : ''}
+              </div>
             </td>
             <td>${diffHtml}</td>
             <td style="text-align: center;">${statusBadge}</td>

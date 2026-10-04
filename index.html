@@ -634,6 +634,11 @@
             <input type="text" id="inp-manager" name="manager" class="form-input">
           </div>
 
+          <div class="form-group">
+            <label class="form-label">كود المدير المباشر (Id manager)</label>
+            <input type="text" id="inp-manager_id" name="manager_id" class="form-input" placeholder="مثال: 000019">
+          </div>
+
           <!-- Section 3: التواصل والحسابات المالية -->
           <div class="section-divider">
             <i class="fa-solid fa-address-book"></i>
@@ -875,6 +880,10 @@
                 <i class="fa-solid fa-user"></i>
                 <span>رابط مخصص لموظف معين (محدد بالكود)</span>
               </button>
+              <button type="button" class="link-type-tab" id="tab-link-manager" data-type="manager">
+                <i class="fa-solid fa-user-tie"></i>
+                <span>رابط لمدير مباشر (لفريق عمل)</span>
+              </button>
             </div>
           </div>
 
@@ -889,6 +898,40 @@
               </button>
             </div>
             <div id="specific-emp-preview" style="margin-top: 0.5rem; font-size: 0.82rem; color: #028090; font-weight: 600; display: none;"></div>
+          </div>
+
+          <!-- Manager Team Picker (Hidden by default) -->
+          <div id="manager-emp-box" style="display: none; background: #f8fafc; padding: 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); flex-direction: column; gap: 0.75rem;">
+            <div>
+              <label class="form-label required" style="font-weight: 700; color: var(--primary);">
+                <i class="fa-solid fa-id-badge"></i> كود المدير المباشر (Id manager)
+              </label>
+              <div style="display: flex; gap: 0.5rem;">
+                <input type="text" id="gen-manager-id" class="form-input" placeholder="أدخل كود المدير (Id manager) مثال: 000019" style="flex: 1;">
+                <button type="button" id="btn-fetch-manager-team" class="btn btn-secondary">
+                  <i class="fa-solid fa-users-viewfinder"></i>
+                  <span>جلب فريق العمل</span>
+                </button>
+              </div>
+              <div id="manager-info-preview" style="margin-top: 0.4rem; font-size: 0.85rem; color: #028090; font-weight: 700; display: none;"></div>
+            </div>
+
+            <!-- Team Members Selection List -->
+            <div id="manager-team-container" style="display: none; border-top: 1px dashed #cbd5e1; padding-top: 0.75rem;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                <label class="form-label" style="font-weight: 700; margin: 0; font-size: 0.85rem;">
+                  <i class="fa-solid fa-people-group text-primary"></i> أعضاء فريق العمل التابعين لهذا المدير:
+                  <span id="manager-team-count" class="badge" style="background: #e0f2fe; color: #0369a1; padding: 0.15rem 0.5rem; font-size: 0.78rem;">0 موظف</span>
+                </label>
+                <div style="display: flex; gap: 0.35rem;">
+                  <button type="button" id="btn-team-select-all" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">تحديد الكل</button>
+                  <button type="button" id="btn-team-clear-all" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">إلغاء الكل</button>
+                </div>
+              </div>
+              <div id="manager-team-list" style="max-height: 180px; overflow-y: auto; background: white; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.4rem;">
+                <!-- Dynamically populated checkboxes -->
+              </div>
+            </div>
           </div>
 
           <!-- Step 2: Field Selection (Checkboxes) -->
@@ -906,6 +949,9 @@
               </button>
               <button type="button" class="quick-btn" id="btn-quick-identity">
                 <i class="fa-solid fa-id-card"></i> البيانات الشخصية والرقم القومي
+              </button>
+              <button type="button" class="quick-btn" id="btn-quick-appraisal">
+                <i class="fa-solid fa-star-half-stroke"></i> تقييمات الأداء والترقيات
               </button>
               <button type="button" class="quick-btn" id="btn-quick-all">
                 <i class="fa-solid fa-check-double"></i> تحديد الكل
@@ -959,6 +1005,40 @@
               <label class="field-check-item">
                 <input type="checkbox" value="email">
                 <span>البريد الإلكتروني الشخصي</span>
+              </label>
+
+              <!-- حقول المدير وتقييم الأداء -->
+              <label class="field-check-item" style="border-right: 3px solid #7030A0;">
+                <input type="checkbox" value="pa_2024">
+                <span>تقييم الأداء 2024 (PA 2024)</span>
+              </label>
+              <label class="field-check-item" style="border-right: 3px solid #7030A0;">
+                <input type="checkbox" value="pa_2025">
+                <span>تقييم الأداء 2025 (PA 2025)</span>
+              </label>
+              <label class="field-check-item" style="border-right: 3px solid #00B050;">
+                <input type="checkbox" value="promo_2024">
+                <span>ترقية 2024 (Promo 2024)</span>
+              </label>
+              <label class="field-check-item" style="border-right: 3px solid #00B050;">
+                <input type="checkbox" value="promo_2025">
+                <span>ترقية 2025 (Promo 2025)</span>
+              </label>
+              <label class="field-check-item" style="border-right: 3px solid #00B050;">
+                <input type="checkbox" value="promo_2026">
+                <span>ترقية 2026 (Promo 2026)</span>
+              </label>
+              <label class="field-check-item">
+                <input type="checkbox" value="job_title">
+                <span>الوظيفة (Job Title)</span>
+              </label>
+              <label class="field-check-item">
+                <input type="checkbox" value="job_post">
+                <span>المسمى الوظيفي (Job Post)</span>
+              </label>
+              <label class="field-check-item">
+                <input type="checkbox" value="managerial_level">
+                <span>المستوى الإداري</span>
               </label>
             </div>
           </div>

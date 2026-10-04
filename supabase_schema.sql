@@ -137,3 +137,14 @@ WHERE lower(btrim(e.qalaa_group_functions)) = c.raw AND e.qalaa_group_functions 
 --    أزل علامة التعليق من السطر التالي:
 -- =========================================================================
 -- ALTER TABLE public.employees DROP COLUMN IF EXISTS asd;
+
+-- =========================================================================
+-- 7. Add manager_id (Id manager) to employees table and update requests
+-- =========================================================================
+ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS manager_id TEXT;
+CREATE INDEX IF NOT EXISTS idx_employees_manager_id ON public.employees (manager_id);
+
+ALTER TABLE public.employee_update_requests ADD COLUMN IF NOT EXISTS submitted_by TEXT DEFAULT 'employee';
+ALTER TABLE public.employee_update_requests ADD COLUMN IF NOT EXISTS manager_id TEXT;
+CREATE INDEX IF NOT EXISTS idx_update_requests_mgr_id ON public.employee_update_requests (manager_id);
+

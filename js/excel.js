@@ -103,6 +103,11 @@
     'البريد الإلكتروني': 'email',
     'manager': 'manager',
     'المدير المباشر': 'manager',
+    'id manager': 'manager_id',
+    'manager id': 'manager_id',
+    'manager_id': 'manager_id',
+    'كود المدير': 'manager_id',
+    'كود المدير المباشر': 'manager_id',
 
     // تقييمات الأداء السنوية
     'pa 2016': 'pa_2016',
@@ -196,6 +201,7 @@
     { key: 'employee_name_ar', header: 'أســم الموظف بالعربية', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'right' },
     { key: 'email', header: 'Email', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'left' },
     { key: 'manager', header: 'Manager', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'left' },
+    { key: 'manager_id', header: 'Id manager', hBg: '002060', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
     { key: 'pa_2016', header: 'PA 2016', hBg: '7030A0', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
     { key: 'pa_2017', header: 'PA 2017', hBg: '7030A0', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },
     { key: 'pa_2018', header: 'PA 2018', hBg: '7030A0', hFg: 'FFFFF3C9', dBg: 'FFFFFF', dFg: '000000', align: 'center' },

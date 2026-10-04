@@ -275,6 +275,49 @@
       return data;
     },
 
+    // Fetch team members by Manager ID (Id manager) or fallback to Manager Name
+    async getTeamByManager(managerId) {
+      try {
+        if (!managerId) return { manager: null, team: [] };
+        const cleanId = String(managerId).trim();
+
+        // 1. Get manager profile
+        const { data: manager } = await client
+          .from('employees')
+          .select('id, employee_name, employee_name_ar, job_title, job_post, department, mobile_numbers, national_id')
+          .eq('id', cleanId)
+          .maybeSingle();
+
+        // 2. Fetch team where manager_id matches
+        let { data: team, error } = await client
+          .from('employees')
+          .select('*')
+          .eq('manager_id', cleanId)
+          .order('id', { ascending: true });
+
+        // Fallback: If no records have manager_id set yet, check by manager name if available
+        if ((!team || team.length === 0) && manager) {
+          const mgrName = manager.employee_name;
+          const mgrNameAr = manager.employee_name_ar;
+          let query = client.from('employees').select('*');
+          if (mgrName && mgrNameAr) {
+            query = query.or(`manager.eq."${mgrName}",manager.eq."${mgrNameAr}"`);
+          } else if (mgrName) {
+            query = query.eq('manager', mgrName);
+          }
+          const res = await query.order('id', { ascending: true });
+          if (res.data && res.data.length > 0) {
+            team = res.data;
+          }
+        }
+
+        return { manager: manager || null, team: team || [] };
+      } catch (err) {
+        console.error('Error fetching team by manager:', err);
+        return { manager: null, team: [] };
+      }
+    },
+
     // Create or Update single employee
     async upsertEmployee(employeeData) {
       employeeData.updated_at = new Date().toISOString();

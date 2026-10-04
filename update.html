@@ -501,6 +501,39 @@
 
         </div>
 
+        <!-- Phase 2B: Manager Portal (Visible for Manager links) -->
+        <div id="manager-portal-section" style="display: none;">
+          <div class="employee-badge" style="background: linear-gradient(135deg, rgba(0, 32, 96, 0.05), rgba(2, 128, 144, 0.1)); border: 1px solid rgba(2, 128, 144, 0.25);">
+            <div class="emp-info">
+              <div class="emp-avatar" style="background: linear-gradient(135deg, #028090, #002060);"><i class="fa-solid fa-user-tie"></i></div>
+              <div class="emp-names">
+                <h3 id="mgr-portal-name">بوابة استيفاء بيانات فريق العمل</h3>
+                <p id="mgr-portal-title">المدير المباشر: <span id="mgr-portal-id">-</span></p>
+              </div>
+            </div>
+            <div class="emp-code" id="mgr-portal-team-count">0 موظف</div>
+          </div>
+
+          <div class="info-callout" style="margin-top: 1rem;">
+            <i class="fa-solid fa-clipboard-check text-accent" style="font-size: 1.25rem;"></i>
+            <div>
+              <strong>توجيهات استيفاء بيانات الفريق:</strong>
+              يرجى مراجعة وتعبئة الحقول المحددة لموظفي فريق عملك أدناه، ثم الضغط على زر الإرسال بالأسفل لإرسالها دفعة واحدة لإدارة الموارد البشرية (HR).
+            </div>
+          </div>
+
+          <div id="manager-team-cards" style="margin-top: 1.25rem; display: flex; flex-direction: column; gap: 1.15rem;">
+            <!-- Rendered by update.js -->
+          </div>
+
+          <div style="margin-top: 1.75rem;">
+            <button type="button" id="btn-manager-submit-all" class="btn-submit">
+              <i class="fa-solid fa-paper-plane"></i>
+              <span>إرسال بيانات وتقييمات الفريق بالكامل للمراجعة والاعتماد</span>
+            </button>
+          </div>
+        </div>
+
         <!-- Phase 3: Success Screen -->
         <div id="success-section" class="success-card">
           <div class="success-icon-wrap" style="background: rgba(2, 128, 144, 0.1); color: var(--accent);">

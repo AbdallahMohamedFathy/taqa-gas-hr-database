@@ -77,20 +77,104 @@
       type: 'email',
       icon: 'fa-envelope',
       placeholder: 'name@example.com'
+    },
+
+    // تقييمات الأداء والترقيات والبيانات الوظيفية (للمدير المباشر والـ HR)
+    pa_2024: {
+      label: 'تقييم الأداء 2024 (PA 2024)',
+      type: 'select',
+      icon: 'fa-star',
+      options: [
+        { value: '', label: 'اختر التقييم...' },
+        { value: 'A', label: 'A - ممتاز (Excellent)' },
+        { value: 'B', label: 'B - جيد جداً (Very Good)' },
+        { value: 'C', label: 'C - جيد (Good)' },
+        { value: 'D', label: 'D - مقبول (Fair)' },
+        { value: 'E', label: 'E - ضعيف (Poor)' }
+      ]
+    },
+    pa_2025: {
+      label: 'تقييم الأداء 2025 (PA 2025)',
+      type: 'select',
+      icon: 'fa-star',
+      options: [
+        { value: '', label: 'اختر التقييم...' },
+        { value: 'A', label: 'A - ممتاز (Excellent)' },
+        { value: 'B', label: 'B - جيد جداً (Very Good)' },
+        { value: 'C', label: 'C - جيد (Good)' },
+        { value: 'D', label: 'D - مقبول (Fair)' },
+        { value: 'E', label: 'E - ضعيف (Poor)' }
+      ]
+    },
+    promo_2024: {
+      label: 'ترقية 2024 (Promotion)',
+      type: 'select',
+      icon: 'fa-arrow-trend-up',
+      options: [
+        { value: '', label: 'لا توجد ترقية (-)' },
+        { value: 'P', label: 'P - تمت الترقية' }
+      ]
+    },
+    promo_2025: {
+      label: 'ترقية 2025 (Promotion)',
+      type: 'select',
+      icon: 'fa-arrow-trend-up',
+      options: [
+        { value: '', label: 'لا توجد ترقية (-)' },
+        { value: 'P', label: 'P - تمت الترقية' }
+      ]
+    },
+    promo_2026: {
+      label: 'ترقية 2026 (Promotion)',
+      type: 'select',
+      icon: 'fa-arrow-trend-up',
+      options: [
+        { value: '', label: 'لا توجد ترقية (-)' },
+        { value: 'P', label: 'P - تمت الترقية' }
+      ]
+    },
+    job_title: {
+      label: 'الوظيفة (Job Title)',
+      type: 'text',
+      icon: 'fa-briefcase',
+      placeholder: 'الوظيفة الحالية'
+    },
+    job_post: {
+      label: 'المسمى الوظيفي (Job Post)',
+      type: 'text',
+      icon: 'fa-user-tag',
+      placeholder: 'المسمى الوظيفي'
+    },
+    managerial_level: {
+      label: 'المستوى الإداري (Managerial Level)',
+      type: 'text',
+      icon: 'fa-sitemap',
+      placeholder: 'مثال: Second Level'
+    },
+    department: {
+      label: 'الإدارة (Department)',
+      type: 'text',
+      icon: 'fa-building-user',
+      placeholder: 'الإدارة'
     }
   };
 
-  // Safe list of fields that an employee is strictly allowed to update
+  // Safe list of fields that can be updated via links
   const SAFE_EDITABLE_KEYS = Object.keys(FIELD_DICTIONARY);
 
   // State
   let currentEmployee = null;
   let targetFields = [];
+  let currentManager = null;
+  let currentTeamEmployees = [];
 
   // Parse URL Parameters
   const urlParams = new URLSearchParams(window.location.search);
   const paramId = (urlParams.get('id') || '').trim();
+  const paramManagerId = (urlParams.get('manager_id') || urlParams.get('mgr') || '').trim();
+  const paramEmps = (urlParams.get('emps') || '').trim();
   const paramFields = urlParams.get('f') || urlParams.get('fields') || '';
+  const isManagerMode = !!paramManagerId;
 
   // Determine allowed fields from URL, or fallback to all safe fields
   if (paramFields) {
@@ -98,12 +182,15 @@
     targetFields = SAFE_EDITABLE_KEYS.filter(k => rawList.includes(k.toLowerCase()));
   }
   if (!targetFields || targetFields.length === 0) {
-    targetFields = SAFE_EDITABLE_KEYS;
+    targetFields = isManagerMode 
+      ? ['pa_2024', 'pa_2025', 'promo_2024', 'promo_2025', 'job_title', 'job_post'] 
+      : SAFE_EDITABLE_KEYS.filter(k => !k.startsWith('pa_') && !k.startsWith('promo_'));
   }
 
   // DOM Elements
   const verifySection = document.getElementById('verify-section');
   const formSection = document.getElementById('form-section');
+  const managerPortalSection = document.getElementById('manager-portal-section');
   const successSection = document.getElementById('success-section');
   const lockedSection = document.getElementById('locked-section');
   const verifyEmpId = document.getElementById('verify-emp-id');
@@ -113,7 +200,30 @@
   const updateForm = document.getElementById('update-form');
   const btnSaveUpdate = document.getElementById('btn-save-update');
 
+  // Manager Portal DOM Elements
+  const mgrPortalName = document.getElementById('mgr-portal-name');
+  const mgrPortalId = document.getElementById('mgr-portal-id');
+  const mgrPortalTeamCount = document.getElementById('mgr-portal-team-count');
+  const managerTeamCards = document.getElementById('manager-team-cards');
+  const btnManagerSubmitAll = document.getElementById('btn-manager-submit-all');
+
   const STORAGE_KEY = 'taqa_pending_update_requests';
+
+  // Customize UI for Manager Mode if manager_id is present
+  if (isManagerMode) {
+    const verifyTitleEl = document.querySelector('label[for="verify-emp-id"] span');
+    if (verifyTitleEl) {
+      verifyTitleEl.innerHTML = '<i class="fa-solid fa-user-tie text-accent"></i> كود المدير المباشر (Id manager) <span class="req">*</span>';
+    }
+    const bannerTitle = document.querySelector('.banner-content h2');
+    const bannerSubtitle = document.querySelector('.banner-content p');
+    if (bannerTitle) bannerTitle.textContent = 'بوابة المدير المباشر لاستيفاء وتقييم بيانات الفريق';
+    if (bannerSubtitle) bannerSubtitle.textContent = 'يرجى تأكيد هويتك لعرض أعضاء فريق عملك وتحديث بياناتهم وتقييماتهم';
+    if (verifyEmpId) {
+      verifyEmpId.value = paramManagerId;
+      verifyEmpId.placeholder = 'مثال: 000019';
+    }
+  }
 
   // Display Locked Screen if employee already has a submitted request
   function showLockedScreen(lockInfo, emp) {
@@ -339,6 +449,13 @@
         throw new Error('الرقم القومي أو رقم الموبايل غير مطابق للمسجل لدينا بالكود ' + empId);
       }
 
+      // If Manager Mode: Enter Team Update Portal
+      if (isManagerMode) {
+        currentManager = data;
+        await renderManagerPortal(data, paramEmps);
+        return;
+      }
+
       // Check if this employee already submitted a request (Pending or Approved)
       const lockInfo = await checkEmployeeLocked(empId);
       if (lockInfo) {
@@ -464,6 +581,162 @@
         }
       });
     }
+  }
+
+  // Step 2B: Render Manager Portal (For direct manager evaluating or updating their team)
+  async function renderManagerPortal(manager, empsFilterStr) {
+    if (verifySection) verifySection.style.display = 'none';
+    if (formSection) formSection.style.display = 'none';
+    if (managerPortalSection) managerPortalSection.style.display = 'block';
+
+    const mgrName = manager.employee_name_ar || manager.employee_name || 'المدير المباشر';
+    if (mgrPortalName) mgrPortalName.textContent = mgrName;
+    if (mgrPortalId) mgrPortalId.textContent = `${manager.id} (${manager.job_title || manager.job_post || 'مدير مباشر'})`;
+
+    if (managerTeamCards) {
+      managerTeamCards.innerHTML = `
+        <div style="text-align: center; padding: 2rem; color: #64748b;">
+          <i class="fa-solid fa-spinner fa-spin" style="font-size: 1.75rem; color: var(--accent); margin-bottom: 0.5rem;"></i>
+          <p>جاري تحميل بيانات وأعضاء فريق العمل...</p>
+        </div>
+      `;
+    }
+
+    let team = [];
+    try {
+      // 1. Fetch team by manager_id (Id manager)
+      const cleanMgrId = String(manager.id).trim();
+      let { data, error } = await client
+        .from('employees')
+        .select('*')
+        .eq('manager_id', cleanMgrId)
+        .order('id', { ascending: true });
+
+      // Fallback: If no records match manager_id yet, fallback to manager name
+      if (!data || data.length === 0) {
+        const mgrNameEn = manager.employee_name;
+        const mgrNameAr = manager.employee_name_ar;
+        let query = client.from('employees').select('*');
+        if (mgrNameEn && mgrNameAr) {
+          query = query.or(`manager.eq."${mgrNameEn}",manager.eq."${mgrNameAr}"`);
+        } else if (mgrNameEn) {
+          query = query.eq('manager', mgrNameEn);
+        }
+        const res = await query.order('id', { ascending: true });
+        if (res.data && res.data.length > 0) {
+          data = res.data;
+        }
+      }
+
+      team = data || [];
+    } catch (err) {
+      console.error('Error fetching manager team:', err);
+    }
+
+    // If specific subset was requested in the URL (emps=...)
+    if (empsFilterStr) {
+      const allowedSet = new Set(empsFilterStr.split(',').map(s => s.trim().toLowerCase()));
+      team = team.filter(emp => allowedSet.has(String(emp.id).toLowerCase()));
+    }
+
+    currentTeamEmployees = team;
+
+    if (mgrPortalTeamCount) {
+      mgrPortalTeamCount.textContent = `${team.length} موظف`;
+    }
+
+    if (team.length === 0) {
+      managerTeamCards.innerHTML = `
+        <div style="text-align: center; padding: 2.5rem 1rem; background: #f8fafc; border-radius: var(--radius-md); border: 1px dashed #cbd5e1;">
+          <i class="fa-solid fa-users-slash" style="font-size: 2.5rem; color: #94a3b8; margin-bottom: 0.75rem;"></i>
+          <h4 style="color: #334155; margin-bottom: 0.35rem;">لا يوجد موظفون تابعون لهذا الكود حالياً</h4>
+          <p style="color: #64748b; font-size: 0.85rem; max-width: 420px; margin: 0 auto;">
+            لم يتم العثور على موظفين مسجلين بكود المدير (Id manager: ${manager.id}). يرجى التأكد من إدارة الموارد البشرية (HR).
+          </p>
+        </div>
+      `;
+      if (btnManagerSubmitAll) btnManagerSubmitAll.style.display = 'none';
+      return;
+    }
+
+    if (btnManagerSubmitAll) btnManagerSubmitAll.style.display = 'flex';
+
+    // Render team member cards
+    managerTeamCards.innerHTML = team.map((emp, index) => {
+      const empName = emp.employee_name_ar || emp.employee_name || 'موظف';
+      const firstLetter = empName.trim().charAt(0) || 'م';
+      const jobDesc = [emp.job_title || emp.job_post, emp.department].filter(Boolean).join(' • ') || 'طاقة غاز';
+
+      const fieldsHtml = targetFields.map(key => {
+        const meta = FIELD_DICTIONARY[key];
+        if (!meta) return '';
+
+        let inputHtml = '';
+        if (meta.type === 'select') {
+          const optionsHtml = meta.options.map(opt => {
+            const isSelected = emp[key] && String(emp[key]).trim().toLowerCase() === String(opt.value).trim().toLowerCase();
+            return `<option value="${opt.value}" ${isSelected ? 'selected' : ''}>${opt.label}</option>`;
+          }).join('');
+
+          inputHtml = `
+            <select class="form-control" data-emp-id="${emp.id}" data-field="${key}">
+              ${optionsHtml}
+            </select>
+          `;
+        } else {
+          let val = emp[key] || '';
+          if (meta.type === 'date' && val) val = formatDateForInput(val);
+
+          inputHtml = `
+            <input 
+              type="${meta.type || 'text'}" 
+              class="form-control" 
+              data-emp-id="${emp.id}" 
+              data-field="${key}" 
+              value="${val ? String(val).replace(/"/g, '&quot;') : ''}" 
+              placeholder="${meta.placeholder || ''}"
+            />
+          `;
+        }
+
+        return `
+          <div class="field-group" style="margin-bottom: 0.5rem;">
+            <label class="field-label" style="font-size: 0.8rem; margin-bottom: 0.25rem;">
+              <span><i class="fa-solid ${meta.icon} text-primary" style="margin-left: 5px;"></i> ${meta.label}</span>
+            </label>
+            ${inputHtml}
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="team-member-card" style="background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.15rem; box-shadow: var(--shadow-sm); transition: var(--transition);">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.75rem; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #028090, #002060); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.95rem;">
+                ${firstLetter}
+              </div>
+              <div>
+                <div style="font-weight: 700; color: var(--navy-900); font-size: 0.95rem;">
+                  <span style="color: var(--text-muted); font-size: 0.8rem; margin-left: 4px;">#${index + 1}</span>
+                  ${empName}
+                </div>
+                <div style="font-size: 0.78rem; color: var(--text-muted);">${jobDesc}</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="font-family: monospace; font-weight: 700; background: #e0f2fe; color: #0369a1; padding: 0.2rem 0.55rem; border-radius: 4px; font-size: 0.82rem;">
+                كود: ${emp.id}
+              </span>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem;">
+            ${fieldsHtml}
+          </div>
+        </div>
+      `;
+    }).join('');
   }
 
   // Step 3: Handle Form Submission & Route to HR Approval Queue
@@ -608,5 +881,162 @@
       btnSaveUpdate.innerHTML = '<i class="fa-solid fa-paper-plane"></i> <span>إرسال طلب التعديل للمراجعة والاعتماد</span>';
     }
   });
+
+  // Step 3B: Handle Manager Batch Submission for Team Members
+  if (btnManagerSubmitAll) {
+    btnManagerSubmitAll.addEventListener('click', async () => {
+      if (!currentManager || !currentTeamEmployees || currentTeamEmployees.length === 0) return;
+
+      btnManagerSubmitAll.disabled = true;
+      btnManagerSubmitAll.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري إرسال تقييمات وبيانات الفريق...</span>';
+
+      try {
+        const teamUpdates = [];
+        let totalChangedFieldsCount = 0;
+
+        currentTeamEmployees.forEach(emp => {
+          const empInputs = managerTeamCards.querySelectorAll(`[data-emp-id="${emp.id}"]`);
+          const actualChanges = {};
+          const actualOriginals = {};
+          const changedFields = [];
+
+          empInputs.forEach(input => {
+            const key = input.getAttribute('data-field');
+            if (!key || !SAFE_EDITABLE_KEYS.includes(key)) return;
+
+            const newVal = String(input.value || '').trim();
+            const oldVal = (emp[key] !== null && emp[key] !== undefined) ? String(emp[key]).trim() : '';
+
+            let isSame = (newVal === oldVal);
+
+            if (!isSame && ['birth_date', 'start_date', 'resignation_date'].includes(key)) {
+              const d1 = parseDateRobust(oldVal);
+              const d2 = parseDateRobust(newVal);
+              if (d1 && d2 && d1.getTime() === d2.getTime()) isSame = true;
+            }
+
+            if (!isSame) {
+              actualChanges[key] = newVal;
+              actualOriginals[key] = oldVal;
+              changedFields.push({
+                key,
+                label: FIELD_DICTIONARY[key]?.label || key,
+                oldVal: oldVal || '(فارغ)',
+                newVal: newVal || '(فارغ)'
+              });
+            }
+          });
+
+          if (changedFields.length > 0) {
+            totalChangedFieldsCount += changedFields.length;
+            teamUpdates.push({
+              employee: emp,
+              actualChanges,
+              actualOriginals,
+              changedFields
+            });
+          }
+        });
+
+        if (teamUpdates.length === 0) {
+          showToast('لم يتم تعديل أي حقول أو تقييمات لأي موظف!', 'warning');
+          btnManagerSubmitAll.disabled = false;
+          btnManagerSubmitAll.innerHTML = '<i class="fa-solid fa-paper-plane"></i> <span>إرسال بيانات وتقييمات الفريق بالكامل للمراجعة والاعتماد</span>';
+          return;
+        }
+
+        // Build request records
+        const recordsToInsert = teamUpdates.map(u => ({
+          employee_id: String(u.employee.id),
+          employee_name: u.employee.employee_name_ar || u.employee.employee_name || '',
+          requested_changes: u.actualChanges,
+          original_data: u.actualOriginals,
+          status: 'pending',
+          submitted_at: new Date().toISOString(),
+          submitted_by: 'manager',
+          manager_id: String(currentManager.id)
+        }));
+
+        // Send to Cloud Table
+        let isCloudSaved = false;
+        try {
+          const { data, error } = await client
+            .from('employee_update_requests')
+            .insert(recordsToInsert)
+            .select();
+
+          if (!error && data && data.length > 0) {
+            isCloudSaved = true;
+          }
+        } catch (cloudErr) {
+          console.warn('Cloud table not ready, queuing locally:', cloudErr);
+        }
+
+        // Fallback / sync local storage
+        try {
+          const STORAGE_KEY = 'taqa_pending_update_requests';
+          const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+          recordsToInsert.forEach(rec => {
+            existing.unshift({
+              id: 'req_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+              ...rec,
+              is_local: !isCloudSaved
+            });
+          });
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
+        } catch (storageErr) {}
+
+        // Show Success Phase
+        if (managerPortalSection) managerPortalSection.style.display = 'none';
+        if (successSection) successSection.style.display = 'block';
+
+        const successMsg = document.getElementById('success-message');
+        if (successMsg) {
+          successMsg.textContent = `تم إرسال تقييمات وتحديثات (${teamUpdates.length}) من موظفي فريق عملك بنجاح إلى إدارة الموارد البشرية (HR) للمراجعة والاعتماد.`;
+        }
+
+        // Build Summary of submitted fields grouped by employee
+        const summaryBox = document.getElementById('submitted-fields-summary');
+        if (summaryBox) {
+          summaryBox.style.display = 'block';
+          summaryBox.innerHTML = `
+            <div style="font-weight: 700; color: var(--primary); margin-bottom: 0.65rem;">
+              <i class="fa-solid fa-users-gear text-accent"></i> ملخص التحديثات والتقييمات المرسلة (${teamUpdates.length} موظف - إجمالي ${totalChangedFieldsCount} بيان مُعدّل):
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+              ${teamUpdates.map(u => `
+                <div style="background: white; border: 1px solid var(--border-color); border-radius: 6px; padding: 0.65rem 0.85rem;">
+                  <div style="font-weight: 700; color: var(--navy-900); font-size: 0.85rem; margin-bottom: 0.35rem; display: flex; justify-content: space-between;">
+                    <span>${u.employee.employee_name_ar || u.employee.employee_name}</span>
+                    <span style="font-family: monospace; color: var(--primary); font-size: 0.8rem;">كود: ${u.employee.id}</span>
+                  </div>
+                  <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.25rem;">
+                    ${u.changedFields.map(f => `
+                      <li style="display: flex; justify-content: space-between; font-size: 0.8rem; border-bottom: 1px dashed #f1f5f9; padding-bottom: 2px;">
+                        <span style="color: var(--text-muted);">${f.label}:</span>
+                        <span style="color: var(--accent); font-weight: 600;">${f.newVal}</span>
+                      </li>
+                    `).join('')}
+                  </ul>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }
+
+        const nowTime = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) + ' - ' + new Date().toLocaleDateString('ar-EG');
+        const successTimeEl = document.getElementById('success-time');
+        if (successTimeEl) successTimeEl.textContent = nowTime;
+
+        showToast(`تم إرسال تعديلات ${teamUpdates.length} موظف بنجاح!`, 'success');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      } catch (err) {
+        showToast('حدث خطأ أثناء إرسال البيانات: ' + err.message, 'error');
+        btnManagerSubmitAll.disabled = false;
+        btnManagerSubmitAll.innerHTML = '<i class="fa-solid fa-paper-plane"></i> <span>إرسال بيانات وتقييمات الفريق بالكامل للمراجعة والاعتماد</span>';
+      }
+    });
+  }
 
 })();

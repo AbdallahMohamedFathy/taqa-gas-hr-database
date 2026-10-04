@@ -52,6 +52,7 @@ window.COLUMN_DEFINITIONS = [
   { key: "employee_name_ar", label: "أســم الموظف بالعربية", labelAr: "الاسم بالعربي", defaultVisible: true },
   { key: "email", label: "Email", labelAr: "البريد الإلكتروني", defaultVisible: true },
   { key: "manager", label: "Manager", labelAr: "المدير المباشر", defaultVisible: true },
+  { key: "manager_id", label: "Id manager", labelAr: "كود المدير (Id manager)", defaultVisible: true },
 
   // تقييمات الأداء السنوية (Performance Appraisal) - مخفية افتراضياً من الجدول
   { key: "pa_2016", label: "PA 2016", labelAr: "تقييم 2016", group: "pa", defaultVisible: false },
