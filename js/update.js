@@ -105,6 +105,7 @@
   const verifySection = document.getElementById('verify-section');
   const formSection = document.getElementById('form-section');
   const successSection = document.getElementById('success-section');
+  const lockedSection = document.getElementById('locked-section');
   const verifyEmpId = document.getElementById('verify-emp-id');
   const verifySecret = document.getElementById('verify-secret');
   const btnVerify = document.getElementById('btn-verify');
@@ -112,10 +113,108 @@
   const updateForm = document.getElementById('update-form');
   const btnSaveUpdate = document.getElementById('btn-save-update');
 
-  // Pre-fill ID if passed in URL
+  const STORAGE_KEY = 'taqa_pending_update_requests';
+
+  // Display Locked Screen if employee already has a submitted request
+  function showLockedScreen(lockInfo, emp) {
+    if (verifySection) verifySection.style.display = 'none';
+    if (formSection) formSection.style.display = 'none';
+    if (successSection) successSection.style.display = 'none';
+    if (!lockedSection) return;
+
+    lockedSection.style.display = 'block';
+
+    const empName = emp ? (emp.employee_name_ar || emp.employee_name || 'موظف طاقة غاز') : (lockInfo.employee_name || 'موظف طاقة غاز');
+    const empCode = emp ? emp.id : (lockInfo.employee_id || verifyEmpId.value.trim() || paramId || '-');
+
+    const codeEl = document.getElementById('locked-emp-code');
+    const nameEl = document.getElementById('locked-emp-name');
+    const dateEl = document.getElementById('locked-request-date');
+    const badgeEl = document.getElementById('locked-status-badge');
+    const titleEl = document.getElementById('locked-title');
+    const msgEl = document.getElementById('locked-message');
+
+    if (codeEl) codeEl.textContent = empCode;
+    if (nameEl) nameEl.textContent = empName;
+
+    const reqDate = lockInfo.submitted_at 
+      ? new Date(lockInfo.submitted_at).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' }) 
+      : 'مسجل مسبقاً';
+    if (dateEl) dateEl.textContent = reqDate;
+
+    if (lockInfo.status === 'approved') {
+      if (titleEl) titleEl.textContent = 'تم استيفاء واعتماد بياناتك مسبقاً';
+      if (msgEl) msgEl.textContent = 'تم استيفاء واعتماد بيانات هذا الموظف مسبقاً بنجاح في قاعدة البيانات بواسطة إدارة الموارد البشرية (HR). هذا الرابط لم يعد متاحاً للاستخدام مرة أخرى.';
+      if (badgeEl) {
+        badgeEl.textContent = 'معتمد ومكتمل';
+        badgeEl.style.background = '#dcfce7';
+        badgeEl.style.color = '#15803d';
+      }
+    } else {
+      if (titleEl) titleEl.textContent = 'الرابط غير متاح للتعديل حالياً';
+      if (msgEl) msgEl.textContent = 'لديك طلب تحديث بيانات تم إرساله بالفعل وهو قيد المراجعة والاعتماد لدى إدارة الموارد البشرية (HR). لا يمكن إرسال طلب جديد حتى يتم مراجعة طلبك السابق.';
+      if (badgeEl) {
+        badgeEl.textContent = 'قيد المراجعة (معلق)';
+        badgeEl.style.background = '#fef08a';
+        badgeEl.style.color = '#854d0e';
+      }
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // Check if an employee is locked (already submitted a pending or approved request)
+  async function checkEmployeeLocked(empId) {
+    if (!empId) return null;
+    const cleanId = String(empId).trim();
+
+    // 1. Check Cloud Database (employee_update_requests)
+    try {
+      const { data, error } = await client
+        .from('employee_update_requests')
+        .select('*')
+        .eq('employee_id', cleanId)
+        .order('submitted_at', { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        // If there's any pending request, lock!
+        const pending = data.find(r => r.status === 'pending');
+        if (pending) return pending;
+
+        // If there's an approved request, lock!
+        const approved = data.find(r => r.status === 'approved');
+        if (approved) return approved;
+      }
+    } catch (e) {
+      console.warn('Error checking cloud update requests:', e);
+    }
+
+    // 2. Check localStorage fallback
+    try {
+      const local = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      const localPending = local.find(r => String(r.employee_id).trim() === cleanId && (r.status === 'pending' || r.status === 'approved'));
+      if (localPending) return localPending;
+    } catch (e) {}
+
+    return null;
+  }
+
+  // Pre-fill ID if passed in URL and check immediately if locked
   if (paramId) {
     verifyEmpId.value = paramId;
-    verifySecret.focus();
+    (async () => {
+      try {
+        const lockInfo = await checkEmployeeLocked(paramId);
+        if (lockInfo) {
+          const { data } = await client.from('employees').select('id, employee_name, employee_name_ar').eq('id', paramId).maybeSingle();
+          showLockedScreen(lockInfo, data);
+        } else {
+          verifySecret.focus();
+        }
+      } catch (e) {
+        verifySecret.focus();
+      }
+    })();
   }
 
   // Toast Notification Helper
@@ -238,6 +337,13 @@
 
       if (!verified) {
         throw new Error('الرقم القومي أو رقم الموبايل غير مطابق للمسجل لدينا بالكود ' + empId);
+      }
+
+      // Check if this employee already submitted a request (Pending or Approved)
+      const lockInfo = await checkEmployeeLocked(empId);
+      if (lockInfo) {
+        showLockedScreen(lockInfo, data);
+        return;
       }
 
       // Identity Verified Successfully!

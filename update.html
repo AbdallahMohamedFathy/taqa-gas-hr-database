@@ -515,6 +515,30 @@
           </div>
         </div>
 
+        <!-- Phase 4: Locked Screen (When employee already has a submitted request) -->
+        <div id="locked-section" class="success-card" style="display: none;">
+          <div class="success-icon-wrap" style="background: rgba(220, 38, 38, 0.1); color: #dc2626;">
+            <i class="fa-solid fa-lock"></i>
+          </div>
+          <h2 id="locked-title" style="color: #991b1b;">الرابط غير متاح للتعديل حالياً</h2>
+          <p id="locked-message" style="color: #475569; font-weight: 500;">
+            لديك طلب تحديث بيانات تم إرساله مسبقاً، ولا يمكن إرسال طلب جديد عبر هذا الرابط.
+          </p>
+          <div style="font-size: 0.85rem; color: #475569; background: #fff1f2; border: 1px solid #fecdd3; padding: 0.95rem; border-radius: var(--radius-sm); max-width: 440px; margin: 0 auto; text-align: right; line-height: 1.8;">
+            <div style="font-weight: 700; color: #991b1b; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.4rem;">
+              <i class="fa-solid fa-circle-exclamation"></i>
+              <span>تفاصيل وحالة الطلب:</span>
+            </div>
+            <div>• كود الموظف: <strong id="locked-emp-code" style="font-family: monospace;">-</strong></div>
+            <div>• اسم الموظف: <strong id="locked-emp-name">-</strong></div>
+            <div>• حالة الطلب: <span id="locked-status-badge" class="badge" style="background: #fef08a; color: #854d0e; padding: 0.15rem 0.55rem; font-size: 0.78rem; font-weight: 700; border-radius: 4px;">قيد المراجعة</span></div>
+            <div>• تاريخ وتوقيت الإرسال: <span id="locked-request-date">-</span></div>
+            <div style="margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px dashed #fecdd3; color: #991b1b; font-size: 0.8rem;">
+              <i class="fa-solid fa-headset me-1"></i> في حال وجود أي استفسار أو رغبة في تعديل بيانات إضافية، يرجى التواصل مع إدارة الموارد البشرية (HR).
+            </div>
+          </div>
+        </div>
+
       </div>
 
     </div>
