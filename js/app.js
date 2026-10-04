@@ -784,6 +784,11 @@
       employeeData.serial_no = await API.getNextSerialNo();
     }
 
+    // توحيد إملاء أسماء الشركات والقطاعات
+    if (typeof window.normalizeEmployeeRecord === 'function') {
+      window.normalizeEmployeeRecord(employeeData);
+    }
+
     els.btnSaveEmployee.disabled = true;
     els.btnSaveEmployee.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري الحفظ...</span>';
 

@@ -53,3 +53,57 @@ window.COLUMN_DEFINITIONS = [
   { key: "email", label: "Email", labelAr: "البريد الإلكتروني", defaultVisible: true },
   { key: "manager", label: "Manager", labelAr: "المدير المباشر", defaultVisible: true }
 ];
+
+
+// =========================================================================
+// توحيد الإملاء (Canonical spellings)
+// نفس الشركة كانت مكتوبة بأكثر من شكل في ملف الإكسيل (MASTER GAS / Master Gas).
+// المفتاح دائماً بحروف صغيرة ومسافات مضغوطة، والقيمة هي الشكل المعتمد.
+// =========================================================================
+const COMPANY_CANON = {
+  "taqa gas": "TAQA Gas",
+  "taqa": "TAQA Gas",
+  "house gas": "House Gas",
+  "housegas": "House Gas",
+  "master gas": "Master Gas",
+  "mastergas": "Master Gas",
+  "trans gas": "Trans Gas",
+  "transgas": "Trans Gas",
+  "others": "Others"
+};
+
+const SECTOR_CANON = {
+  "ldc": "LDC",
+  "epc": "EPC",
+  "cng": "CNG",
+  "others": "Others"
+};
+
+window.VALUE_NORMALIZATION = {
+  company: COMPANY_CANON,
+  costed_by_company: COMPANY_CANON,
+  company_sector: SECTOR_CANON,
+  costed_by_sector: SECTOR_CANON,
+  // نفس نوع المشكلة في أعمدة تانية (اختلاف حالة الأحرف فقط)
+  division: { "hr": "Human Resources", "human resources": "Human Resources" },
+  sub_department: { "conversion": "Conversion" },
+  qalaa_group_functions: {
+    "operational": "Operational Function",
+    "operational function": "Operational Function",
+    "supporting": "Support Function",
+    "support function": "Support Function"
+  }
+};
+
+// يوحّد إملاء القيم في السجل الواحد (يُستدعى عند الاستيراد من الإكسيل وعند الحفظ اليدوي)
+window.normalizeEmployeeRecord = function(record) {
+  if (!record || typeof record !== "object") return record;
+  Object.keys(window.VALUE_NORMALIZATION).forEach(field => {
+    const raw = record[field];
+    if (raw === null || raw === undefined || String(raw).trim() === "") return;
+    const lookup = String(raw).replace(/\s+/g, " ").trim().toLowerCase();
+    const canonical = window.VALUE_NORMALIZATION[field][lookup];
+    if (canonical) record[field] = canonical;
+  });
+  return record;
+};

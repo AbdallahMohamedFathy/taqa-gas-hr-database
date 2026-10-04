@@ -62,6 +62,46 @@ ON public.employee_update_requests FOR DELETE
 TO anon, authenticated
 USING (true);
 -- =========================================================================
+-- 5. Normalize spelling variants on existing rows
+--    (نفس الشركة كانت مكتوبة بأكثر من شكل: MASTER GAS / Master Gas ... إلخ)
+-- =========================================================================
+WITH canon(raw, fixed) AS (VALUES ('taqa gas','TAQA Gas'),('taqa','TAQA Gas'),('house gas','House Gas'),('housegas','House Gas'),('master gas','Master Gas'),('mastergas','Master Gas'),('trans gas','Trans Gas'),('transgas','Trans Gas'),('others','Others'))
+UPDATE public.employees e SET company = c.fixed
+FROM canon c
+WHERE lower(btrim(e.company)) = c.raw AND e.company IS DISTINCT FROM c.fixed;
+
+WITH canon(raw, fixed) AS (VALUES ('taqa gas','TAQA Gas'),('taqa','TAQA Gas'),('house gas','House Gas'),('housegas','House Gas'),('master gas','Master Gas'),('mastergas','Master Gas'),('trans gas','Trans Gas'),('transgas','Trans Gas'),('others','Others'))
+UPDATE public.employees e SET costed_by_company = c.fixed
+FROM canon c
+WHERE lower(btrim(e.costed_by_company)) = c.raw AND e.costed_by_company IS DISTINCT FROM c.fixed;
+
+WITH canon(raw, fixed) AS (VALUES ('ldc','LDC'),('epc','EPC'),('cng','CNG'),('others','Others'))
+UPDATE public.employees e SET company_sector = c.fixed
+FROM canon c
+WHERE lower(btrim(e.company_sector)) = c.raw AND e.company_sector IS DISTINCT FROM c.fixed;
+
+WITH canon(raw, fixed) AS (VALUES ('ldc','LDC'),('epc','EPC'),('cng','CNG'),('others','Others'))
+UPDATE public.employees e SET costed_by_sector = c.fixed
+FROM canon c
+WHERE lower(btrim(e.costed_by_sector)) = c.raw AND e.costed_by_sector IS DISTINCT FROM c.fixed;
+
+-- نفس المشكلة في أعمدة أخرى (اختلاف حالة الأحرف فقط)
+WITH canon(raw, fixed) AS (VALUES ('hr','Human Resources'),('human resources','Human Resources'))
+UPDATE public.employees e SET division = c.fixed
+FROM canon c
+WHERE lower(btrim(e.division)) = c.raw AND e.division IS DISTINCT FROM c.fixed;
+
+WITH canon(raw, fixed) AS (VALUES ('conversion','Conversion'))
+UPDATE public.employees e SET sub_department = c.fixed
+FROM canon c
+WHERE lower(btrim(e.sub_department)) = c.raw AND e.sub_department IS DISTINCT FROM c.fixed;
+
+WITH canon(raw, fixed) AS (VALUES ('operational','Operational Function'),('operational function','Operational Function'),('supporting','Support Function'),('support function','Support Function'))
+UPDATE public.employees e SET qalaa_group_functions = c.fixed
+FROM canon c
+WHERE lower(btrim(e.qalaa_group_functions)) = c.raw AND e.qalaa_group_functions IS DISTINCT FROM c.fixed;
+
+-- =========================================================================
 -- 6. ASD column removal (OPTIONAL - destructive, run only when you are sure)
 --    تم إلغاء الحقل من الواجهة بالكامل. لحذف العمود نهائياً من قاعدة البيانات
 --    أزل علامة التعليق من السطر التالي:

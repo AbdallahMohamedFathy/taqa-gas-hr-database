@@ -345,6 +345,11 @@
                 if (record.birth_month) hasAnyData = true;
               }
 
+              // توحيد إملاء أسماء الشركات والقطاعات قبل الحفظ
+              if (typeof window.normalizeEmployeeRecord === 'function') {
+                window.normalizeEmployeeRecord(record);
+              }
+
               if (hasAnyData) {
                 if (!record.id) {
                   errors.push(`الصف رقم ${idx + 2}: لا يحتوي على كود موظف (ID)`);
