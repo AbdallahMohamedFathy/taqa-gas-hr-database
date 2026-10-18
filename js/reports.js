@@ -33,42 +33,8 @@
   const PALETTE = ['#0b9444', '#1e6ca6', '#59595c', '#fad213', '#5bae45', '#0f4c70', '#b7b7ba', '#c98a00',
                    '#237bb4', '#3b9c45', '#8a8a8d', '#8a5c00'];
 
-  // Arabic names for the governorates / sites used in the sheet
-  const LOCATION_AR = {
-    'Cairo': 'القاهرة',
-    'Giza': 'الجيزة',
-    'Alexandria': 'الإسكندرية',
-    'Minya': 'المنيا',
-    'Assuit': 'أسيوط',
-    'Asyut': 'أسيوط',
-    'Bani Suef': 'بني سويف',
-    'Beni Suef': 'بني سويف',
-    'Kafr El Sheikh': 'كفر الشيخ',
-    'Suez': 'السويس',
-    'Damietta': 'دمياط',
-    'Red Sea': 'البحر الأحمر',
-    'New Valley': 'الوادي الجديد',
-    'Qaluibia': 'القليوبية',
-    'Qalubia': 'القليوبية',
-    'Ismailia': 'الإسماعيلية',
-    'Fayoum': 'الفيوم',
-    'Dakahlia': 'الدقهلية',
-    'Sharkia': 'الشرقية',
-    'Port Said': 'بورسعيد',
-    'Luxor': 'الأقصر',
-    'Aswan': 'أسوان',
-    'Sohag': 'سوهاج',
-    'Qena': 'قنا',
-    'Beheira': 'البحيرة',
-    'Gharbia': 'الغربية',
-    'Monufia': 'المنوفية',
-    'Saudi Arabia': 'السعودية',
-    'Qatar': 'قطر',
-    'TAQA EC': 'TAQA EC'
-  };
-
-  const locAr = v => LOCATION_AR[String(v || '').trim()] || String(v || '').trim() || 'غير محدد';
-  const n = v => Number(v || 0).toLocaleString('ar-EG');
+  const locName = v => String(v || '').trim() || 'Not specified';
+  const n = v => Number(v || 0).toLocaleString('en-US');
   const pct = (part, whole) => whole ? (part * 100 / whole).toFixed(1) + '%' : '—';
   const esc = s => String(s == null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -122,7 +88,7 @@
     const m = new Map();
     rows.forEach(r => {
       const raw = mapFn ? mapFn(r) : clean(r[field]);
-      const key = raw || 'غير محدد';
+      const key = raw || 'Not specified';
       m.set(key, (m.get(key) || 0) + 1);
     });
     return Array.from(m.entries())
@@ -218,7 +184,7 @@
       angle = end;
     });
     svg += `<text x="${cx}" y="${cy - 2}" text-anchor="middle" font-size="24" font-weight="800" fill="#0b1a2f">${n(total)}</text>`;
-    svg += `<text x="${cx}" y="${cy + 18}" text-anchor="middle" font-size="12" fill="#64748b">${esc(opts.centerLabel || 'موظف')}</text>`;
+    svg += `<text x="${cx}" y="${cy + 18}" text-anchor="middle" font-size="12" fill="#64748b">${esc(opts.centerLabel || 'employees')}</text>`;
     svg += '</svg>';
 
     const legend = '<div class="legend">' + rows.map((r, i) =>
@@ -283,24 +249,24 @@
     // ---------- meta ----------
     const now = new Date();
     document.getElementById('meta-date').textContent =
-      now.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
-    document.getElementById('meta-count').textContent = n(total) + ' موظف';
+      now.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
+    document.getElementById('meta-count').textContent = n(total) + ' employees';
     document.getElementById('footer-stamp').textContent =
-      'تاريخ ووقت الإصدار: ' + now.toLocaleString('ar-EG');
+      'Generated: ' + now.toLocaleString('en-GB');
 
     const scopeBits = [];
-    if (els.fLocation.value) scopeBits.push('محافظة ' + locAr(els.fLocation.value));
-    if (els.fCompany.value) scopeBits.push('شركة ' + els.fCompany.value);
-    if (els.fSector.value) scopeBits.push('قطاع ' + els.fSector.value);
+    if (els.fLocation.value) scopeBits.push('Governorate: ' + locName(els.fLocation.value));
+    if (els.fCompany.value) scopeBits.push('Company: ' + els.fCompany.value);
+    if (els.fSector.value) scopeBits.push('Sector: ' + els.fSector.value);
     if (els.fDivision.value) scopeBits.push(els.fDivision.value);
-    if (els.fStatus.value === 'active') scopeBits.push('على رأس العمل');
-    document.getElementById('meta-scope').textContent = scopeBits.length ? scopeBits.join(' · ') : 'كل الموظفين';
+    if (els.fStatus.value === 'active') scopeBits.push('Active employees');
+    document.getElementById('meta-scope').textContent = scopeBits.length ? scopeBits.join(' · ') : 'All employees';
 
     if (!total) {
       els.report.querySelectorAll('.rep-section').forEach(s => { s.style.display = 'none'; });
       document.getElementById('kpi-grid').closest('.rep-section').style.display = '';
       document.getElementById('kpi-grid').innerHTML =
-        '<p class="rep-note">لا توجد بيانات مطابقة لهذه الفلاتر.</p>';
+        '<p class="rep-note">No records match the selected filters.</p>';
       return;
     }
     els.report.querySelectorAll('.rep-section').forEach(s => { s.style.display = ''; });
@@ -317,15 +283,15 @@
     const active = rows.filter(isActive).length;
 
     const kpis = [
-      { label: 'إجمالي الموظفين', value: n(total), sub: 'في نطاق هذا التقرير' },
-      { label: 'على رأس العمل', value: n(active), sub: pct(active, total) + ' من الإجمالي' },
-      { label: 'تعيين مباشر (Hired)', value: n(hired), sub: pct(hired, total) },
-      { label: 'إسناد خارجي (Outsourcing)', value: n(outsourced), sub: pct(outsourced, total) },
-      { label: 'عدد المحافظات', value: n(locations.size), sub: 'موقع جغرافي' },
-      { label: 'عدد الشركات', value: n(companies.size), sub: n(depts.size) + ' إدارة' },
-      { label: 'متوسط السن', value: avg(ages) ? avg(ages).toFixed(1) : '—', sub: 'سنة' },
-      { label: 'متوسط سنوات الخبرة', value: avg(yoes) ? avg(yoes).toFixed(1) : '—', sub: 'سنة داخل الشركة' },
-      { label: 'نسبة الإناث', value: pct(females, total), sub: n(females) + ' موظفة' }
+      { label: 'Total employees', value: n(total), sub: 'within this report scope' },
+      { label: 'Currently active', value: n(active), sub: pct(active, total) + ' of total' },
+      { label: 'Directly hired', value: n(hired), sub: pct(hired, total) },
+      { label: 'Outsourced', value: n(outsourced), sub: pct(outsourced, total) },
+      { label: 'Governorates', value: n(locations.size), sub: 'geographic locations' },
+      { label: 'Companies', value: n(companies.size), sub: n(depts.size) + ' departments' },
+      { label: 'Average age', value: avg(ages) ? avg(ages).toFixed(1) : '—', sub: 'years' },
+      { label: 'Average tenure', value: avg(yoes) ? avg(yoes).toFixed(1) : '—', sub: 'years with the company' },
+      { label: 'Female share', value: pct(females, total), sub: n(females) + ' employees' }
     ];
     document.getElementById('kpi-grid').innerHTML = kpis.map(k => `
       <div class="kpi-card">
@@ -335,13 +301,13 @@
       </div>`).join('');
 
     // ---------- 2. Governorates ----------
-    const byLoc = countBy(rows, 'locations', r => locAr(r.locations));
+    const byLoc = countBy(rows, 'locations', r => locName(r.locations));
     const top = byLoc[0];
     const topThree = byLoc.slice(0, 3);
-    let geoText = `يتوزع <strong>${n(total)}</strong> موظف على <strong>${n(locations.size)}</strong> محافظة. ` +
-      `أكبر تجمّع في <strong>${esc(top.label)}</strong> بعدد <strong>${n(top.value)}</strong> موظف (${pct(top.value, total)})`;
+    let geoText = `<strong>${n(total)}</strong> employees are spread across <strong>${n(locations.size)}</strong> governorates. ` +
+      `The largest concentration is in <strong>${esc(top.label)}</strong> with <strong>${n(top.value)}</strong> employees (${pct(top.value, total)})`;
     geoText += byLoc.length >= 3
-      ? `، وتستحوذ أكبر ثلاث محافظات على <strong>${pct(topThree.reduce((a, x) => a + x.value, 0), total)}</strong> من إجمالي القوى العاملة.`
+      ? `, and the three largest governorates account for <strong>${pct(topThree.reduce((a, x) => a + x.value, 0), total)}</strong> of the total workforce.`
       : '.';
     document.getElementById('geo-summary').innerHTML = geoText;
 
@@ -349,7 +315,7 @@
 
     const maxLoc = byLoc[0].value;
     const locRows = byLoc.map(l => {
-      const sub = rows.filter(r => locAr(r.locations) === l.label);
+      const sub = rows.filter(r => locName(r.locations) === l.label);
       const a = avg(sub.map(ageOf).filter(v => v != null));
       const y = avg(sub.map(yoeOf).filter(v => v != null));
       return {
@@ -370,27 +336,27 @@
     });
     locRows.push({
       isTotal: true,
-      cells: ['الإجمالي', '', n(total), '100%', n(hired), n(outsourced),
+      cells: ['Total', '', n(total), '100%', n(hired), n(outsourced),
         n(total - females), n(females),
         avg(ages) ? avg(ages).toFixed(1) : '—',
         avg(yoes) ? avg(yoes).toFixed(1) : '—',
         n(new Set(rows.map(r => clean(r.sub_location)).filter(Boolean)).size)]
     });
     document.getElementById('geo-table').innerHTML = table([
-      { label: 'المحافظة' }, { label: 'التوزيع' }, { label: 'العدد', num: true }, { label: 'النسبة', num: true },
-      { label: 'تعيين مباشر', num: true }, { label: 'إسناد', num: true },
-      { label: 'ذكور', num: true }, { label: 'إناث', num: true },
-      { label: 'متوسط السن', num: true }, { label: 'متوسط الخبرة', num: true },
-      { label: 'مواقع فرعية', num: true }
+      { label: 'Governorate' }, { label: 'Share' }, { label: 'Count', num: true }, { label: '%', num: true },
+      { label: 'Hired', num: true }, { label: 'Outsourced', num: true },
+      { label: 'Male', num: true }, { label: 'Female', num: true },
+      { label: 'Avg age', num: true }, { label: 'Avg tenure', num: true },
+      { label: 'Sub-locations', num: true }
     ], locRows);
 
     // ---------- governorate x company matrix ----------
     const comps = countBy(rows, 'company').slice(0, 6).map(c => c.label);
     const matrixRows = byLoc.map(l => {
-      const sub = rows.filter(r => locAr(r.locations) === l.label);
+      const sub = rows.filter(r => locName(r.locations) === l.label);
       const cells = [esc(l.label)];
       comps.forEach(c => {
-        const v = sub.filter(r => (clean(r.company) || 'غير محدد') === c).length;
+        const v = sub.filter(r => (clean(r.company) || 'Not specified') === c).length;
         cells.push(v ? n(v) : '—');
       });
       cells.push(n(l.value));
@@ -398,39 +364,39 @@
     });
     matrixRows.push({
       isTotal: true,
-      cells: ['الإجمالي'].concat(
-        comps.map(c => n(rows.filter(r => (clean(r.company) || 'غير محدد') === c).length)),
+      cells: ['Total'].concat(
+        comps.map(c => n(rows.filter(r => (clean(r.company) || 'Not specified') === c).length)),
         [n(total)])
     });
     document.getElementById('geo-company-matrix').innerHTML = table(
-      [{ label: 'المحافظة' }].concat(comps.map(c => ({ label: c, num: true })), [{ label: 'الإجمالي', num: true }]),
+      [{ label: 'Governorate' }].concat(comps.map(c => ({ label: c, num: true })), [{ label: 'Total', num: true }]),
       matrixRows);
 
     // ---------- top sub-locations ----------
-    const bySub = countBy(rows, 'sub_location').filter(s => s.label !== 'غير محدد').slice(0, 15);
+    const bySub = countBy(rows, 'sub_location').filter(s => s.label !== 'Not specified').slice(0, 15);
     const maxSub = bySub.length ? bySub[0].value : 1;
     document.getElementById('sublocation-table').innerHTML = table([
-      { label: 'الموقع الفرعي' }, { label: 'المحافظة' }, { label: 'التوزيع' },
-      { label: 'العدد', num: true }, { label: 'النسبة', num: true }
+      { label: 'Sub-location' }, { label: 'Governorate' }, { label: 'Share' },
+      { label: 'Count', num: true }, { label: '%', num: true }
     ], bySub.map(s => {
       const sub = rows.filter(r => clean(r.sub_location) === s.label);
-      const loc = countBy(sub, 'locations', r => locAr(r.locations))[0];
+      const loc = countBy(sub, 'locations', r => locName(r.locations))[0];
       return { cells: [esc(s.label), esc(loc ? loc.label : '—'), cellBar(s.value, maxSub), n(s.value), pct(s.value, total)] };
     }));
 
     // ---------- 3. Organisation ----------
-    panel('chart-company', 'التوزيع حسب الشركة', donutChart(countBy(rows, 'company')));
-    panel('chart-sector', 'التوزيع حسب القطاع (Sector)', donutChart(countBy(rows, 'company_sector')));
-    panel('chart-division', 'أكبر القطاعات الرئيسية (Division)', hBarChart(countBy(rows, 'division'), { total: total, limit: 8, color: '#1e6ca6' }));
-    panel('chart-jobtree', 'أكبر شجرات الوظائف (Job Tree)', hBarChart(countBy(rows, 'job_tree'), { total: total, limit: 8, color: '#0b9444' }));
+    panel('chart-company', 'Headcount by Company', donutChart(countBy(rows, 'company')));
+    panel('chart-sector', 'Headcount by Sector', donutChart(countBy(rows, 'company_sector')));
+    panel('chart-division', 'Largest Divisions', hBarChart(countBy(rows, 'division'), { total: total, limit: 8, color: '#1e6ca6' }));
+    panel('chart-jobtree', 'Largest Job Trees', hBarChart(countBy(rows, 'job_tree'), { total: total, limit: 8, color: '#0b9444' }));
 
     const byDept = countBy(rows, 'department');
     const maxDept = byDept[0].value;
     document.getElementById('dept-table').innerHTML = table([
-      { label: 'الإدارة' }, { label: 'التوزيع' }, { label: 'العدد', num: true }, { label: 'النسبة', num: true },
-      { label: 'أقسام فرعية', num: true }, { label: 'متوسط الخبرة', num: true }
+      { label: 'Department' }, { label: 'Share' }, { label: 'Count', num: true }, { label: '%', num: true },
+      { label: 'Sub-departments', num: true }, { label: 'Avg tenure', num: true }
     ], byDept.map(d => {
-      const sub = rows.filter(r => (clean(r.department) || 'غير محدد') === d.label);
+      const sub = rows.filter(r => (clean(r.department) || 'Not specified') === d.label);
       const y = avg(sub.map(yoeOf).filter(v => v != null));
       return {
         cells: [esc(d.label), cellBar(d.value, maxDept), n(d.value), pct(d.value, total),
@@ -439,46 +405,46 @@
     }));
 
     // ---------- 4. Workforce composition ----------
-    panel('chart-gender', 'التوزيع حسب النوع', donutChart(countBy(rows, 'gender', r => {
+    panel('chart-gender', 'Headcount by Gender', donutChart(countBy(rows, 'gender', r => {
       const g = clean(r.gender).toLowerCase();
-      return g.startsWith('m') ? 'ذكور' : g.startsWith('f') ? 'إناث' : 'غير محدد';
+      return g.startsWith('m') ? 'Male' : g.startsWith('f') ? 'Female' : 'Not specified';
     })));
-    panel('chart-hiring', 'طبيعة التعاقد', donutChart(countBy(rows, 'employment_type', r => {
+    panel('chart-hiring', 'Engagement Type', donutChart(countBy(rows, 'employment_type', r => {
       const t = clean(r.employment_type).toLowerCase();
-      return t === 'hired' ? 'تعيين مباشر' : t === 'outsourcing' ? 'إسناد خارجي' : (clean(r.employment_type) || 'غير محدد');
+      return t === 'hired' ? 'Directly hired' : t === 'outsourcing' ? 'Outsourced' : (clean(r.employment_type) || 'Not specified');
     })));
 
     const ageBands = [
-      { label: 'أقل من ٢٥', test: a => a < 25 },
-      { label: '٢٥ – ٣٤', test: a => a >= 25 && a < 35 },
-      { label: '٣٥ – ٤٤', test: a => a >= 35 && a < 45 },
-      { label: '٤٥ – ٥٤', test: a => a >= 45 && a < 55 },
-      { label: '٥٥ فأكثر', test: a => a >= 55 }
+      { label: 'Under 25', test: a => a < 25 },
+      { label: '25 – 34', test: a => a >= 25 && a < 35 },
+      { label: '35 – 44', test: a => a >= 35 && a < 45 },
+      { label: '45 – 54', test: a => a >= 45 && a < 55 },
+      { label: '55 and over', test: a => a >= 55 }
     ].map(b => ({ label: b.label, value: ages.filter(b.test).length }));
-    panel('chart-age', 'الشرائح العمرية', vBarChart(ageBands, { color: '#1e6ca6' }) +
-      `<p class="rep-note" style="margin:0.4rem 0 0">محسوبة من تاريخ الميلاد لعدد ${n(ages.length)} موظف لديهم تاريخ ميلاد مسجل.</p>`);
+    panel('chart-age', 'Age Bands', vBarChart(ageBands, { color: '#1e6ca6' }) +
+      `<p class="rep-note" style="margin:0.4rem 0 0">Calculated from date of birth for ${n(ages.length)} employees with a recorded birth date.</p>`);
 
     const yoeBands = [
-      { label: 'أقل من سنة', test: y => y < 1 },
-      { label: '١ – ٤', test: y => y >= 1 && y < 5 },
-      { label: '٥ – ٩', test: y => y >= 5 && y < 10 },
-      { label: '١٠ – ١٤', test: y => y >= 10 && y < 15 },
-      { label: '١٥ – ١٩', test: y => y >= 15 && y < 20 },
-      { label: '٢٠ فأكثر', test: y => y >= 20 }
+      { label: 'Under 1 year', test: y => y < 1 },
+      { label: '1 – 4', test: y => y >= 1 && y < 5 },
+      { label: '5 – 9', test: y => y >= 5 && y < 10 },
+      { label: '10 – 14', test: y => y >= 10 && y < 15 },
+      { label: '15 – 19', test: y => y >= 15 && y < 20 },
+      { label: '20 and over', test: y => y >= 20 }
     ].map(b => ({ label: b.label, value: yoes.filter(b.test).length }));
-    panel('chart-yoe', 'سنوات الخبرة داخل الشركة', vBarChart(yoeBands, { color: '#0b9444' }) +
-      `<p class="rep-note" style="margin:0.4rem 0 0">محسوبة من تاريخ التعيين لعدد ${n(yoes.length)} موظف.</p>`);
+    panel('chart-yoe', 'Years of Service', vBarChart(yoeBands, { color: '#0b9444' }) +
+      `<p class="rep-note" style="margin:0.4rem 0 0">Calculated from the hiring date for ${n(yoes.length)} employees.</p>`);
 
     const byContract = countBy(rows, 'type_of_contract');
     const byLevel = countBy(rows, 'taqa_level_grade');
     const maxC = byContract[0].value, maxL = byLevel[0].value;
     document.getElementById('contract-table').innerHTML =
       '<div class="chart-row" style="margin-top:0.4rem">' +
-      '<div class="chart-cell"><div class="chart-title">نوع العقد</div>' +
-      table([{ label: 'النوع' }, { label: '' }, { label: 'العدد', num: true }, { label: 'النسبة', num: true }],
+      '<div class="chart-cell"><div class="chart-title">Contract Type</div>' +
+      table([{ label: 'Type' }, { label: '' }, { label: 'Count', num: true }, { label: '%', num: true }],
         byContract.map(c => ({ cells: [esc(c.label), cellBar(c.value, maxC), n(c.value), pct(c.value, total)] }))) +
-      '</div><div class="chart-cell"><div class="chart-title">الدرجة الوظيفية (TAQA Grade)</div>' +
-      table([{ label: 'الدرجة' }, { label: '' }, { label: 'العدد', num: true }, { label: 'النسبة', num: true }],
+      '</div><div class="chart-cell"><div class="chart-title">TAQA Grade</div>' +
+      table([{ label: 'Grade' }, { label: '' }, { label: 'Count', num: true }, { label: '%', num: true }],
         byLevel.map(c => ({ cells: [esc(c.label), cellBar(c.value, maxL), n(c.value), pct(c.value, total)] }))) +
       '</div></div>';
 
@@ -495,28 +461,28 @@
         value: graded.filter(r => clean(r[paKey]).toUpperCase() === g).length
       })).filter(x => x.value);
       const other = graded.length - paCounts.reduce((a, x) => a + x.value, 0);
-      if (other > 0) paCounts.push({ label: 'أخرى', value: other });
+      if (other > 0) paCounts.push({ label: 'Other', value: other });
 
       const paColors = { 'A': '#0b9444', 'B': '#5bae45', 'C': '#fad213', 'D': '#f59e0b', 'E': '#ef4444' };
-      panel('chart-pa', `توزيع تقييم الأداء لعام ${paYear}`,
+      panel('chart-pa', `Performance Ratings — ${paYear}`,
         vBarChart(paCounts, { colorFor: r => paColors[r.label] || '#64748b' }) +
-        `<p class="rep-note" style="margin:0.4rem 0 0">عدد المقيَّمين: <strong>${n(graded.length)}</strong> من ${n(total)} (${pct(graded.length, total)}).</p>`);
+        `<p class="rep-note" style="margin:0.4rem 0 0">Employees rated: <strong>${n(graded.length)}</strong> of ${n(total)} (${pct(graded.length, total)}).</p>`);
 
       const topA = graded.filter(r => ['A', 'B'].includes(clean(r[paKey]).toUpperCase())).length;
       document.getElementById('pa-by-location').innerHTML =
-        `<p class="rep-note">نسبة التقييمات المتميزة (A أو B) في تقييم ${paYear} على مستوى المحافظات — الإجمالي العام <strong>${pct(topA, graded.length)}</strong>.</p>` +
-        table([{ label: 'المحافظة' }, { label: 'عدد المقيَّمين', num: true },
+        `<p class="rep-note">Share of high ratings (A or B) in the ${paYear} review by governorate — overall <strong>${pct(topA, graded.length)}</strong>.</p>` +
+        table([{ label: 'Governorate' }, { label: 'Rated', num: true },
                { label: 'A', num: true }, { label: 'B', num: true }, { label: 'C', num: true },
-               { label: 'D / E', num: true }, { label: 'نسبة A+B', num: true }],
+               { label: 'D / E', num: true }, { label: 'A+B share', num: true }],
           byLoc.map(l => {
-            const sub = graded.filter(r => locAr(r.locations) === l.label);
+            const sub = graded.filter(r => locName(r.locations) === l.label);
             if (!sub.length) return null;
             const g = k => sub.filter(r => clean(r[paKey]).toUpperCase() === k).length;
             const de = g('D') + g('E');
             return { cells: [esc(l.label), n(sub.length), n(g('A')), n(g('B')), n(g('C')), n(de), pct(g('A') + g('B'), sub.length)] };
           }).filter(Boolean));
     } else {
-      panel('chart-pa', 'تقييم الأداء', '<p class="rep-note">لا توجد تقييمات أداء مسجلة لهذه المجموعة.</p>');
+      panel('chart-pa', 'Performance Ratings', '<p class="rep-note">No performance ratings recorded for this selection.</p>');
       document.getElementById('pa-by-location').innerHTML = '';
     }
 
@@ -527,11 +493,11 @@
     const promoTotal = promos.reduce((a, x) => a + x.value, 0);
     if (promoTotal) {
       const promoted = rows.filter(r => promoYears().some(k => clean(r[k]).toUpperCase() === 'P')).length;
-      panel('chart-promo', 'عدد الترقيات في كل عام',
+      panel('chart-promo', 'Promotions per Year',
         vBarChart(promos, { color: '#1e6ca6', limit: 12 }) +
-        `<p class="rep-note" style="margin:0.4rem 0 0">إجمالي <strong>${n(promoTotal)}</strong> ترقية شملت <strong>${n(promoted)}</strong> موظف (${pct(promoted, total)} من المشمولين بالتقرير).</p>`);
+        `<p class="rep-note" style="margin:0.4rem 0 0"><strong>${n(promoTotal)}</strong> promotions covering <strong>${n(promoted)}</strong> employees (${pct(promoted, total)} of those in this report).</p>`);
     } else {
-      panel('chart-promo', 'الترقيات', '<p class="rep-note">لا توجد ترقيات مسجلة لهذه المجموعة.</p>');
+      panel('chart-promo', 'Promotions', '<p class="rep-note">No promotions recorded for this selection.</p>');
     }
     if (paSection) paSection.style.display = (paKey || promoTotal) ? '' : 'none';
 
@@ -540,8 +506,8 @@
       'insurance_number', 'bank_name', 'account_numbers', 'manager', 'job_post', 'sub_location'];
     const defs = window.COLUMN_DEFINITIONS.reduce((m, c) => { m[c.key] = c; return m; }, {});
     document.getElementById('completeness-table').innerHTML = table([
-      { label: 'الحقل' }, { label: 'الاكتمال' }, { label: 'مملوء', num: true },
-      { label: 'ناقص', num: true }, { label: 'النسبة', num: true }
+      { label: 'Field' }, { label: 'Completeness' }, { label: 'Filled', num: true },
+      { label: 'Missing', num: true }, { label: '%', num: true }
     ], fields.map(f => {
       const filled = rows.filter(r => clean(r[f])).length;
       const d = defs[f];
@@ -571,15 +537,15 @@
   async function init() {
     try {
       ALL = await window.API._fetchAllRows('*');
-      if (!ALL || !ALL.length) throw new Error('قاعدة البيانات لا تحتوي على موظفين.');
+      if (!ALL || !ALL.length) throw new Error('The database contains no employees.');
 
       const uniq = field => Array.from(new Set(ALL.map(r => clean(r[field])).filter(Boolean)))
         .sort((a, b) => a.localeCompare(b, 'ar'));
 
-      fillSelect(els.fLocation, uniq('locations'), 'كل المحافظات', locAr);
-      fillSelect(els.fCompany, uniq('company'), 'كل الشركات');
-      fillSelect(els.fSector, uniq('company_sector'), 'كل القطاعات');
-      fillSelect(els.fDivision, uniq('division'), 'كل القطاعات الرئيسية');
+      fillSelect(els.fLocation, uniq('locations'), 'All governorates', locName);
+      fillSelect(els.fCompany, uniq('company'), 'All companies');
+      fillSelect(els.fSector, uniq('company_sector'), 'All sectors');
+      fillSelect(els.fDivision, uniq('division'), 'All divisions');
 
       [els.fLocation, els.fCompany, els.fSector, els.fDivision, els.fStatus]
         .forEach(s => s.addEventListener('change', applyFilters));
@@ -601,7 +567,7 @@
     } catch (err) {
       els.loader.style.display = 'none';
       els.error.style.display = '';
-      els.errorText.textContent = 'تعذر تحميل بيانات التقرير: ' + (err && err.message ? err.message : err);
+      els.errorText.textContent = 'Could not load the report data: ' + (err && err.message ? err.message : err);
     }
   }
 
