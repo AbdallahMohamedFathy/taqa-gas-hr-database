@@ -140,18 +140,20 @@
   function vBarChart(items, opts) {
     opts = opts || {};
     const rows = items.slice(0, opts.limit || 14);
-    const W = 1000, H = 300, padL = 40, padR = 20, padT = 20, padB = 58;
+    // A 520-unit box in a ~460px cell keeps these labels near their nominal
+    // size; the old 1000-unit box shrank 12px text to about 5px on screen.
+    const W = 520, H = 320, padL = 46, padR = 16, padT = 26, padB = 60;
     const plotW = W - padL - padR, plotH = H - padT - padB;
     const max = Math.max(1, ...rows.map(r => r.value));
     const slot = plotW / Math.max(1, rows.length);
-    const barW = Math.min(64, slot * 0.62);
+    const barW = Math.min(58, slot * 0.62);
 
     let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" style="direction:ltr" preserveAspectRatio="xMidYMid meet">`;
     // grid lines
     for (let g = 0; g <= 4; g++) {
       const y = padT + plotH - (plotH * g / 4);
       svg += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="#e2e8f0" stroke-width="1"></line>`;
-      svg += `<text x="${padL - 6}" y="${y + 4}" text-anchor="end" font-size="11" fill="#94a3b8">${n(Math.round(max * g / 4))}</text>`;
+      svg += `<text x="${padL - 8}" y="${y + 4}" text-anchor="end" font-size="12" fill="#94a3b8">${n(Math.round(max * g / 4))}</text>`;
     }
     rows.forEach((r, i) => {
       const h = Math.max(1, plotH * r.value / max);
@@ -159,10 +161,10 @@
       const y = padT + plotH - h;
       const color = opts.colorFor ? opts.colorFor(r, i) : (opts.color || PALETTE[i % PALETTE.length]);
       svg += `<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3" fill="${color}"></rect>`;
-      svg += `<text x="${x + barW / 2}" y="${y - 5}" text-anchor="middle" font-size="12" font-weight="600" fill="#0b1a2f">${n(r.value)}</text>`;
-      svg += `<text x="${x + barW / 2}" y="${padT + plotH + 18}" text-anchor="middle" font-size="12" fill="#475569">${esc(r.label)}</text>`;
+      svg += `<text x="${x + barW / 2}" y="${y - 7}" text-anchor="middle" font-size="14" font-weight="700" fill="#0b1a2f">${n(r.value)}</text>`;
+      svg += `<text x="${x + barW / 2}" y="${padT + plotH + 20}" text-anchor="middle" font-size="12.5" font-weight="600" fill="#334155">${esc(r.label)}</text>`;
       if (r.sub) {
-        svg += `<text x="${x + barW / 2}" y="${padT + plotH + 34}" text-anchor="middle" font-size="11" fill="#94a3b8">${esc(r.sub)}</text>`;
+        svg += `<text x="${x + barW / 2}" y="${padT + plotH + 36}" text-anchor="middle" font-size="11.5" fill="#94a3b8">${esc(r.sub)}</text>`;
       }
     });
     svg += '</svg>';
@@ -176,7 +178,7 @@
 
     // Square viewBox so the ring fills the cell; names live in the legend and
     // the share is written straight onto each slice.
-    const S = 300, cx = S / 2, cy = S / 2, rOut = 132, rIn = 76;
+    const S = 300, cx = S / 2, cy = S / 2, rOut = 120, rIn = 70;
     let angle = -Math.PI / 2;
 
     let svg = `<svg viewBox="0 0 ${S} ${S}" role="img" style="direction:ltr;max-width:300px;margin:0 auto" preserveAspectRatio="xMidYMid meet">`;
@@ -204,9 +206,10 @@
 
       // Roomy slices carry the name as well as the share; narrow ones take the
       // share alone, and slivers stay clean and rely on the legend.
-      if (share >= 0.14) {
+      const name = String(r.label);
+      if (share >= 0.14 && name.length <= 9) {
         svg += `<text x="${tx.toFixed(1)}" y="${(ty - 3).toFixed(1)}" text-anchor="middle" font-size="15" font-weight="800" fill="#fff">${pct(r.value, total)}</text>`;
-        svg += `<text x="${tx.toFixed(1)}" y="${(ty + 12).toFixed(1)}" text-anchor="middle" font-size="10.5" font-weight="600" fill="#fff" opacity="0.95">${esc(String(r.label).slice(0, 14))}</text>`;
+        svg += `<text x="${tx.toFixed(1)}" y="${(ty + 12).toFixed(1)}" text-anchor="middle" font-size="10.5" font-weight="600" fill="#fff" opacity="0.95">${esc(name)}</text>`;
       } else if (share >= 0.05) {
         svg += `<text x="${tx.toFixed(1)}" y="${(ty + 4).toFixed(1)}" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">${pct(r.value, total)}</text>`;
       }
@@ -535,6 +538,9 @@
     const fields = ['employee_name_ar', 'national_id', 'mobile_numbers', 'email', 'birth_date', 'start_date',
       'insurance_number', 'bank_name', 'account_numbers', 'manager', 'job_post', 'sub_location'];
     const defs = window.COLUMN_DEFINITIONS.reduce((m, c) => { m[c.key] = c; return m; }, {});
+    // This column's label is the master sheet's own (Arabic) header, which the
+    // Excel export has to reproduce verbatim - so rename it here, not there.
+    const FIELD_LABEL = { employee_name_ar: 'Employee Name (Arabic)' };
     document.getElementById('completeness-table').innerHTML = table([
       { label: 'Field' }, { label: 'Completeness' }, { label: 'Filled', num: true },
       { label: 'Missing', num: true }, { label: '%', num: true }
@@ -542,7 +548,7 @@
       const filled = rows.filter(r => clean(r[f])).length;
       const d = defs[f];
       return {
-        cells: [esc(d ? d.labelAr : f), cellBar(filled, total), n(filled), n(total - filled), pct(filled, total)]
+        cells: [esc(FIELD_LABEL[f] || (d ? d.label : f)), cellBar(filled, total), n(filled), n(total - filled), pct(filled, total)]
       };
     }).sort((a, b) => parseFloat(b.cells[4]) - parseFloat(a.cells[4])));
   }
