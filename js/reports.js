@@ -105,23 +105,33 @@
   function hBarChart(items, opts) {
     opts = opts || {};
     const rows = items.slice(0, opts.limit || 20);
-    const rowH = 24, padTop = 8, padBottom = 6;
+
+    // A narrow viewBox keeps the type large relative to the rendered width:
+    // at ~1070px wide these 15px labels land at roughly 17px on screen.
+    const W = 620;
+    const rowH = 30, padTop = 10, padBottom = 8;
     const H = padTop + rows.length * rowH + padBottom;
-    const trackStart = 110, trackEnd = 790, labelX = 995;
+    const labelW = 190;              // left column holding the category name
+    const trackStart = labelW + 12;
+    const trackEnd = W - 96;         // right margin holds the count + percentage
     const max = Math.max(1, ...rows.map(r => r.value));
     const total = opts.total || rows.reduce((a, r) => a + r.value, 0);
 
-    let svg = `<svg viewBox="0 0 1000 ${H}" role="img" style="direction:ltr" preserveAspectRatio="xMidYMid meet">`;
+    let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" style="direction:ltr" preserveAspectRatio="xMidYMid meet">`;
     rows.forEach((r, i) => {
       const y = padTop + i * rowH;
       const len = Math.max(2, (trackEnd - trackStart) * r.value / max);
       const color = opts.color || PALETTE[i % PALETTE.length];
-      svg += `<rect x="${trackStart}" y="${y + 4}" width="${trackEnd - trackStart}" height="13" rx="3" fill="#eef2f7"></rect>`;
-      svg += `<rect x="${trackEnd - len}" y="${y + 4}" width="${len}" height="13" rx="3" fill="${color}"></rect>`;
-      svg += `<text x="${labelX}" y="${y + 14}" text-anchor="end" font-size="13" font-weight="600" fill="#0b1a2f">${esc(r.label)}</text>`;
-      svg += `<text x="${trackEnd - len - 8}" y="${y + 14}" text-anchor="end" font-size="12" fill="#334155">${n(r.value)}`;
-      if (total) svg += ` (${pct(r.value, total)})`;
-      svg += `</text>`;
+      const barY = y + 5, barH = 16;
+
+      svg += `<text x="${labelW}" y="${y + 17}" text-anchor="end" font-size="15" font-weight="600" fill="#0b1a2f">` +
+             `${esc(String(r.label).slice(0, 26))}</text>`;
+      svg += `<rect x="${trackStart}" y="${barY}" width="${trackEnd - trackStart}" height="${barH}" rx="4" fill="#eef2f7"></rect>`;
+      svg += `<rect x="${trackStart}" y="${barY}" width="${len.toFixed(1)}" height="${barH}" rx="4" fill="${color}"></rect>`;
+
+      let valueText = n(r.value);
+      if (total) valueText += ` (${pct(r.value, total)})`;
+      svg += `<text x="${trackEnd + 8}" y="${y + 17}" text-anchor="start" font-size="14" font-weight="600" fill="#334155">${valueText}</text>`;
     });
     svg += '</svg>';
     return svg;
@@ -163,10 +173,14 @@
     opts = opts || {};
     const rows = items.slice(0, opts.limit || 8);
     const total = rows.reduce((a, r) => a + r.value, 0) || 1;
-    const size = 230, cx = size / 2, cy = size / 2, rOut = 100, rIn = 58;
+
+    // Square viewBox so the ring fills the cell; names live in the legend and
+    // the share is written straight onto each slice.
+    const S = 300, cx = S / 2, cy = S / 2, rOut = 132, rIn = 76;
     let angle = -Math.PI / 2;
 
-    let svg = `<svg viewBox="0 0 ${size} ${size}" role="img" style="direction:ltr;max-width:230px;margin:0 auto" preserveAspectRatio="xMidYMid meet">`;
+    let svg = `<svg viewBox="0 0 ${S} ${S}" role="img" style="direction:ltr;max-width:300px;margin:0 auto" preserveAspectRatio="xMidYMid meet">`;
+
     rows.forEach((r, i) => {
       const slice = (r.value / total) * Math.PI * 2;
       const end = angle + slice;
@@ -176,20 +190,36 @@
       const x3 = cx + rIn * Math.cos(end), y3 = cy + rIn * Math.sin(end);
       const x4 = cx + rIn * Math.cos(angle), y4 = cy + rIn * Math.sin(angle);
       const color = PALETTE[i % PALETTE.length];
+
       if (rows.length === 1) {
         svg += `<circle cx="${cx}" cy="${cy}" r="${(rOut + rIn) / 2}" fill="none" stroke="${color}" stroke-width="${rOut - rIn}"></circle>`;
       } else {
-        svg += `<path d="M${x1} ${y1} A${rOut} ${rOut} 0 ${large} 1 ${x2} ${y2} L${x3} ${y3} A${rIn} ${rIn} 0 ${large} 0 ${x4} ${y4} Z" fill="${color}"></path>`;
+        svg += `<path d="M${x1} ${y1} A${rOut} ${rOut} 0 ${large} 1 ${x2} ${y2} L${x3} ${y3} A${rIn} ${rIn} 0 ${large} 0 ${x4} ${y4} Z" fill="${color}" stroke="#fff" stroke-width="2"></path>`;
+      }
+
+      const share = r.value / total;
+      const mid = angle + slice / 2;
+      const mr = (rOut + rIn) / 2;
+      const tx = cx + mr * Math.cos(mid), ty = cy + mr * Math.sin(mid);
+
+      // Roomy slices carry the name as well as the share; narrow ones take the
+      // share alone, and slivers stay clean and rely on the legend.
+      if (share >= 0.14) {
+        svg += `<text x="${tx.toFixed(1)}" y="${(ty - 3).toFixed(1)}" text-anchor="middle" font-size="15" font-weight="800" fill="#fff">${pct(r.value, total)}</text>`;
+        svg += `<text x="${tx.toFixed(1)}" y="${(ty + 12).toFixed(1)}" text-anchor="middle" font-size="10.5" font-weight="600" fill="#fff" opacity="0.95">${esc(String(r.label).slice(0, 14))}</text>`;
+      } else if (share >= 0.05) {
+        svg += `<text x="${tx.toFixed(1)}" y="${(ty + 4).toFixed(1)}" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">${pct(r.value, total)}</text>`;
       }
       angle = end;
     });
-    svg += `<text x="${cx}" y="${cy - 2}" text-anchor="middle" font-size="24" font-weight="800" fill="#0b1a2f">${n(total)}</text>`;
-    svg += `<text x="${cx}" y="${cy + 18}" text-anchor="middle" font-size="12" fill="#64748b">${esc(opts.centerLabel || 'employees')}</text>`;
+
+    svg += `<text x="${cx}" y="${cy - 2}" text-anchor="middle" font-size="30" font-weight="800" fill="#0b1a2f">${n(total)}</text>`;
+    svg += `<text x="${cx}" y="${cy + 18}" text-anchor="middle" font-size="12.5" fill="#64748b">${esc(opts.centerLabel || 'employees')}</text>`;
     svg += '</svg>';
 
     const legend = '<div class="legend">' + rows.map((r, i) =>
       `<span class="legend-item"><span class="legend-swatch" style="background:${PALETTE[i % PALETTE.length]}"></span>
-       ${esc(r.label)} — ${n(r.value)} (${pct(r.value, total)})</span>`).join('') + '</div>';
+       <strong>${pct(r.value, total)}</strong>&nbsp;${esc(r.label)}&nbsp;<span style="color:#64748b">(${n(r.value)})</span></span>`).join('') + '</div>';
 
     return svg + legend;
   }
