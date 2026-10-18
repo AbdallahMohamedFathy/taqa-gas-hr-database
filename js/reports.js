@@ -137,15 +137,6 @@
     return svg;
   }
 
-  // Blends two hex colours; used to grade a series from light to dark so an
-  // ordered axis (years) reads as a progression rather than flat repetition.
-  function mixHex(from, to, t) {
-    const f = [1, 3, 5].map(i => parseInt(from.substr(i, 2), 16));
-    const q = [1, 3, 5].map(i => parseInt(to.substr(i, 2), 16));
-    const c = f.map((v, i) => Math.round(v + (q[i] - v) * t));
-    return '#' + c.map(v => v.toString(16).padStart(2, '0')).join('');
-  }
-
   function vBarChart(items, opts) {
     opts = opts || {};
     const rows = items.slice(0, opts.limit || 14);
@@ -164,20 +155,32 @@
       svg += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="#e2e8f0" stroke-width="1"></line>`;
       svg += `<text x="${padL - 8}" y="${y + 4}" text-anchor="end" font-size="12" fill="#94a3b8">${n(Math.round(max * g / 4))}</text>`;
     }
+    const pts = [];
     rows.forEach((r, i) => {
       const h = Math.max(1, plotH * r.value / max);
       const x = padL + i * slot + (slot - barW) / 2;
       const y = padT + plotH - h;
-      const color = opts.colorFor ? opts.colorFor(r, i)
-        : opts.ramp ? mixHex(opts.ramp[0], opts.ramp[1], rows.length > 1 ? i / (rows.length - 1) : 1)
-        : (opts.color || PALETTE[i % PALETTE.length]);
+      const color = opts.colorFor ? opts.colorFor(r, i) : (opts.color || PALETTE[i % PALETTE.length]);
       svg += `<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3" fill="${color}"></rect>`;
-      svg += `<text x="${x + barW / 2}" y="${y - 7}" text-anchor="middle" font-size="14" font-weight="700" fill="#0b1a2f">${n(r.value)}</text>`;
+      pts.push([x + barW / 2, y]);
+      svg += `<text x="${x + barW / 2}" y="${y - (opts.line ? 15 : 7)}" text-anchor="middle" font-size="14" font-weight="700" fill="#0b1a2f">${n(r.value)}</text>`;
       svg += `<text x="${x + barW / 2}" y="${padT + plotH + 20}" text-anchor="middle" font-size="12.5" font-weight="600" fill="#334155">${esc(r.label)}</text>`;
       if (r.sub) {
         svg += `<text x="${x + barW / 2}" y="${padT + plotH + 36}" text-anchor="middle" font-size="11.5" fill="#94a3b8">${esc(r.sub)}</text>`;
       }
     });
+
+    // Combo mode: a line through the bar tops, so the year-on-year direction
+    // reads as a trend instead of a row of separate columns.
+    if (opts.line && pts.length > 1) {
+      const lineColor = opts.lineColor || '#0b1a2f';
+      svg += `<polyline points="${pts.map(q => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join(' ')}" ` +
+             `fill="none" stroke="${lineColor}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></polyline>`;
+      pts.forEach(q => {
+        svg += `<circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="4.5" fill="#fff" stroke="${lineColor}" stroke-width="2.5"></circle>`;
+      });
+    }
+
     svg += '</svg>';
     return svg;
   }
@@ -538,7 +541,7 @@
     if (promoTotal) {
       const promoted = rows.filter(r => promoYears().some(k => clean(r[k]).toUpperCase() === 'P')).length;
       panel('chart-promo', 'Promotions per Year',
-        vBarChart(promos, { ramp: ['#a9d3ea', '#0c3f61'], limit: 12 }) +
+        vBarChart(promos, { color: '#aecfe6', line: true, lineColor: '#0c3f61', limit: 12 }) +
         `<p class="rep-note" style="margin:0.4rem 0 0"><strong>${n(promoTotal)}</strong> promotions covering <strong>${n(promoted)}</strong> employees (${pct(promoted, total)} of those in this report).</p>`);
     } else {
       panel('chart-promo', 'Promotions', '<p class="rep-note">No promotions recorded for this selection.</p>');
