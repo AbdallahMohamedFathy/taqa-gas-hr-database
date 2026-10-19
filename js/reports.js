@@ -549,22 +549,116 @@
     if (paSection) paSection.style.display = (paKey || promoTotal) ? '' : 'none';
 
     // ---------- 6. Completeness ----------
-    const fields = ['employee_name_ar', 'national_id', 'mobile_numbers', 'email', 'birth_date', 'start_date',
-      'insurance_number', 'bank_name', 'account_numbers', 'manager', 'job_post', 'sub_location'];
+    renderCompleteness(rows, total);
+  }
+
+  // Fields tracked in the Data Completeness table, and the "who's missing"
+  // drill-down beneath each one. Kept outside render() so the export button
+  // and the click-to-expand handler can reach the current filtered set.
+  const COMPLETENESS_FIELDS = ['employee_name_ar', 'national_id', 'mobile_numbers', 'email', 'birth_date', 'start_date',
+    'insurance_number', 'bank_name', 'account_numbers', 'manager', 'job_post', 'sub_location'];
+  // This column's label is the master sheet's own (Arabic) header, which the
+  // Excel export has to reproduce verbatim - so rename it here, not there.
+  const FIELD_LABEL = { employee_name_ar: 'Employee Name (Arabic)' };
+  const MAX_INLINE_MISSING = 60; // cap the on-screen list; the export has the full one
+
+  let missingByField = {}; // field -> [{id, name}], recomputed on every render
+
+  function renderCompleteness(rows, total) {
     const defs = window.COLUMN_DEFINITIONS.reduce((m, c) => { m[c.key] = c; return m; }, {});
-    // This column's label is the master sheet's own (Arabic) header, which the
-    // Excel export has to reproduce verbatim - so rename it here, not there.
-    const FIELD_LABEL = { employee_name_ar: 'Employee Name (Arabic)' };
-    document.getElementById('completeness-table').innerHTML = table([
-      { label: 'Field' }, { label: 'Completeness' }, { label: 'Filled', num: true },
-      { label: 'Missing', num: true }, { label: '%', num: true }
-    ], fields.map(f => {
-      const filled = rows.filter(r => clean(r[f])).length;
+    missingByField = {};
+
+    const fieldRows = COMPLETENESS_FIELDS.map(f => {
+      const missing = rows.filter(r => !clean(r[f]));
+      missingByField[f] = missing.map(r => ({ id: clean(r.id) || '—', name: clean(r.employee_name) || '—' }));
+      const filled = total - missing.length;
       const d = defs[f];
-      return {
-        cells: [esc(FIELD_LABEL[f] || (d ? d.label : f)), cellBar(filled, total), n(filled), n(total - filled), pct(filled, total)]
-      };
-    }).sort((a, b) => parseFloat(b.cells[4]) - parseFloat(a.cells[4])));
+      return { field: f, label: FIELD_LABEL[f] || (d ? d.label : f), filled: filled, missing: missing.length };
+    }).sort((a, b) => b.filled / total - a.filled / total);
+
+    let h = '<table class="rep-table"><thead><tr>' +
+      '<th></th><th>Field</th><th>Completeness</th><th class="num">Filled</th><th class="num">Missing</th><th class="num">%</th>' +
+      '</tr></thead><tbody>';
+    fieldRows.forEach(r => {
+      h += `<tr class="completeness-row${r.missing ? ' is-clickable' : ''}" data-field="${esc(r.field)}">` +
+        `<td class="expand-arrow"><i class="fa-solid fa-chevron-right"></i></td>` +
+        `<td class="name">${esc(r.label)}</td><td>${cellBar(r.filled, total)}</td>` +
+        `<td class="num">${n(r.filled)}</td><td class="num">${n(r.missing)}</td><td class="num">${pct(r.filled, total)}</td></tr>`;
+      h += `<tr class="completeness-detail no-print" data-field-detail="${esc(r.field)}" style="display:none"><td colspan="6"></td></tr>`;
+    });
+    h += '</tbody></table>';
+    document.getElementById('completeness-table').innerHTML = h;
+  }
+
+  // One click handler for the whole table (rows are rebuilt on every filter
+  // change, so this is delegated rather than bound per-row).
+  document.getElementById('completeness-table').addEventListener('click', (e) => {
+    const row = e.target.closest('.completeness-row');
+    if (!row) return;
+    const field = row.getAttribute('data-field');
+    const list = missingByField[field] || [];
+    if (!list.length) return;
+
+    const detail = document.querySelector(`.completeness-detail[data-field-detail="${field}"]`);
+    const opening = detail.style.display === 'none';
+    document.querySelectorAll('.completeness-detail').forEach(d => { d.style.display = 'none'; d.firstElementChild.innerHTML = ''; });
+    document.querySelectorAll('.completeness-row').forEach(r => r.classList.remove('is-open'));
+    if (!opening) return;
+
+    row.classList.add('is-open');
+    const shown = list.slice(0, MAX_INLINE_MISSING);
+    let body = `<div class="missing-panel"><p class="missing-panel-title">${n(list.length)} employee${list.length === 1 ? '' : 's'} missing this field:</p><div class="missing-grid">` +
+      shown.map(p => `<span class="missing-chip"><strong>${esc(p.id)}</strong> ${esc(p.name)}</span>`).join('') +
+      '</div>';
+    if (list.length > shown.length) {
+      body += `<p class="missing-panel-more">+ ${n(list.length - shown.length)} more — use "Export missing-data list" above for the complete list.</p>`;
+    }
+    body += '</div>';
+    detail.firstElementChild.innerHTML = body;
+    detail.style.display = '';
+  });
+
+  // Builds one worksheet per tracked field listing every employee missing it,
+  // so HR can chase the gaps offline. Mirrors what the table shows, including
+  // the filters currently applied.
+  function exportMissing() {
+    if (typeof XLSX === 'undefined') {
+      alert('The Excel library failed to load. Check your connection and refresh.');
+      return;
+    }
+    const defs = window.COLUMN_DEFINITIONS.reduce((m, c) => { m[c.key] = c; return m; }, {});
+    const wb = XLSX.utils.book_new();
+
+    // Lead with a summary so the file makes sense on its own.
+    const scope = document.getElementById('meta-scope').textContent || 'All employees';
+    const summary = [['TAQA Gas - Missing Data Report'], ['Scope', scope],
+      ['Generated', new Date().toLocaleString('en-GB')], [],
+      ['Field', 'Missing', 'Sheet']];
+    const used = {};
+    COMPLETENESS_FIELDS.forEach(f => {
+      const label = FIELD_LABEL[f] || (defs[f] ? defs[f].label : f);
+      const list = missingByField[f] || [];
+      // Excel sheet names: 31 chars max, no : \ / ? * [ ], and must be unique.
+      let name = String(label).replace(/[:\\/?*\[\]]/g, ' ').trim().slice(0, 28) || f;
+      let i = 2;
+      const base = name;
+      while (used[name.toLowerCase()]) { name = (base.slice(0, 26) + ' ' + i++).trim(); }
+      used[name.toLowerCase()] = true;
+      summary.push([label, list.length, list.length ? name : '-']);
+      if (!list.length) return;
+      const aoa = [['Employee ID', 'Employee Name'], ...list.map(p => [p.id, p.name])];
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      ws['!cols'] = [{ wch: 14 }, { wch: 42 }];
+      XLSX.utils.book_append_sheet(wb, ws, name);
+    });
+
+    const sws = XLSX.utils.aoa_to_sheet(summary);
+    sws['!cols'] = [{ wch: 28 }, { wch: 10 }, { wch: 30 }];
+    // Prepend the summary so it opens first.
+    XLSX.utils.book_append_sheet(wb, sws, 'Summary');
+    wb.SheetNames.unshift(wb.SheetNames.pop());
+
+    XLSX.writeFile(wb, `TAQA_Gas_Missing_Data_${new Date().toISOString().split('T')[0]}.xlsx`);
   }
 
   // ------------------------------------------------------------ filtering
@@ -610,6 +704,9 @@
       });
 
       els.btnPrint.addEventListener('click', () => window.print());
+
+      const btnMissing = document.getElementById('btn-export-missing');
+      if (btnMissing) btnMissing.addEventListener('click', exportMissing);
 
       applyFilters();
       els.loader.style.display = 'none';

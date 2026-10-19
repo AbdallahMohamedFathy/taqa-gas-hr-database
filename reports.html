@@ -11,6 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
   <link rel="stylesheet" href="css/reports.css">
 </head>
 <body>
@@ -175,8 +176,14 @@
 
     <!-- ---------- 6. Data quality ---------- -->
     <section class="rep-section">
-      <h3 class="rep-h"><i class="fa-solid fa-clipboard-check"></i> Data Completeness</h3>
-      <p class="rep-note">Share of fields populated across the records covered by this report — the higher the figure, the more reliable the analysis.</p>
+      <div class="rep-h" style="justify-content:space-between">
+        <span><i class="fa-solid fa-clipboard-check"></i> Data Completeness</span>
+        <button id="btn-export-missing" class="rep-btn rep-btn-light no-print" title="Download one Excel sheet per field listing the employees missing it">
+          <i class="fa-solid fa-file-excel"></i>
+          <span>Export missing-data list</span>
+        </button>
+      </div>
+      <p class="rep-note">Share of fields populated across the records covered by this report — the higher the figure, the more reliable the analysis. Click any row to see who is missing that field.</p>
       <div id="completeness-table" class="table-wrap"></div>
     </section>
 

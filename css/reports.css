@@ -134,6 +134,16 @@ body {
 
 .rep-btn-ghost:hover { background: rgba(255, 255, 255, 0.2); }
 
+/* Ghost button used on white cards in the report body (not the dark toolbar) */
+.rep-btn-light {
+  background: #fff;
+  color: var(--navy-800);
+  border-color: var(--border);
+}
+
+.rep-btn-light:hover { background: #f1f5f9; border-color: #cbd5e1; }
+.rep-btn-light i { color: var(--primary); }
+
 /* ============================ PRINT TIP ============================ */
 .rep-tip {
   max-width: 1500px;
@@ -460,4 +470,60 @@ td.name { font-weight: 600; color: var(--navy-800); }
   .rep-footer { page-break-inside: avoid; }
 
   a[href]::after { content: none !important; }
+}
+
+/* ---- Data completeness: click a row to see who is missing the field ---- */
+.completeness-row.is-clickable { cursor: pointer; }
+.completeness-row.is-clickable:hover { background: #eaf7ee !important; }
+
+.completeness-row .expand-arrow {
+  width: 26px;
+  text-align: center;
+  color: var(--text-light);
+}
+
+/* Rows with nothing missing have nothing to open */
+.completeness-row:not(.is-clickable) .expand-arrow { visibility: hidden; }
+
+.completeness-row .expand-arrow i { transition: transform 0.15s ease-in-out; }
+.completeness-row.is-open .expand-arrow i { transform: rotate(90deg); }
+.completeness-row.is-open { background: #eaf7ee !important; }
+.completeness-row.is-open td { border-bottom-color: transparent; }
+
+.completeness-detail > td { background: #f8fafc; padding: 0 !important; }
+
+.missing-panel { padding: 0.7rem 0.9rem 0.85rem; }
+
+.missing-panel-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--navy-800);
+  margin-bottom: 0.5rem;
+}
+
+.missing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 0.3rem 0.6rem;
+}
+
+.missing-chip {
+  font-size: 0.74rem;
+  color: var(--text-main);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 0.22rem 0.45rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.missing-chip strong { color: var(--primary); font-variant-numeric: tabular-nums; }
+
+.missing-panel-more {
+  margin-top: 0.5rem;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  font-style: italic;
 }
