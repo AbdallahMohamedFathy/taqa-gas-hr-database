@@ -566,33 +566,63 @@
 
   function renderCompleteness(rows, total) {
     const defs = window.COLUMN_DEFINITIONS.reduce((m, c) => { m[c.key] = c; return m; }, {});
+    // Full employee records, not just id/name - the per-row export button
+    // needs every column to build a real Excel sheet, not a contact list.
     missingByField = {};
 
     const fieldRows = COMPLETENESS_FIELDS.map(f => {
       const missing = rows.filter(r => !clean(r[f]));
-      missingByField[f] = missing.map(r => ({ id: clean(r.id) || '—', name: clean(r.employee_name) || '—' }));
+      missingByField[f] = missing;
       const filled = total - missing.length;
       const d = defs[f];
       return { field: f, label: FIELD_LABEL[f] || (d ? d.label : f), filled: filled, missing: missing.length };
     }).sort((a, b) => b.filled / total - a.filled / total);
 
     let h = '<table class="rep-table"><thead><tr>' +
-      '<th></th><th>Field</th><th>Completeness</th><th class="num">Filled</th><th class="num">Missing</th><th class="num">%</th>' +
+      '<th></th><th>Field</th><th>Completeness</th><th class="num">Filled</th><th class="num">Missing</th><th class="num">%</th><th class="no-print"></th>' +
       '</tr></thead><tbody>';
     fieldRows.forEach(r => {
+      const exportCell = r.missing
+        ? `<button type="button" class="row-export-btn no-print" data-field="${esc(r.field)}" ` +
+          `title="Download the full record for every employee missing ${esc(r.label)}">` +
+          `<i class="fa-solid fa-file-arrow-down"></i></button>`
+        : '';
       h += `<tr class="completeness-row${r.missing ? ' is-clickable' : ''}" data-field="${esc(r.field)}">` +
         `<td class="expand-arrow"><i class="fa-solid fa-chevron-right"></i></td>` +
         `<td class="name">${esc(r.label)}</td><td>${cellBar(r.filled, total)}</td>` +
-        `<td class="num">${n(r.filled)}</td><td class="num">${n(r.missing)}</td><td class="num">${pct(r.filled, total)}</td></tr>`;
-      h += `<tr class="completeness-detail no-print" data-field-detail="${esc(r.field)}" style="display:none"><td colspan="6"></td></tr>`;
+        `<td class="num">${n(r.filled)}</td><td class="num">${n(r.missing)}</td><td class="num">${pct(r.filled, total)}</td>` +
+        `<td class="num no-print">${exportCell}</td></tr>`;
+      h += `<tr class="completeness-detail no-print" data-field-detail="${esc(r.field)}" style="display:none"><td colspan="7"></td></tr>`;
     });
     h += '</tbody></table>';
     document.getElementById('completeness-table').innerHTML = h;
   }
 
+  // Downloads the FULL record (every column, same styling as the main
+  // database export) for the employees missing one specific field.
+  function exportFieldMissing(field) {
+    const list = missingByField[field] || [];
+    if (!list.length) return;
+    if (typeof window.ExcelHandler === 'undefined') {
+      alert('The Excel export library failed to load. Check your connection and refresh.');
+      return;
+    }
+    const defs = window.COLUMN_DEFINITIONS.reduce((m, c) => { m[c.key] = c; return m; }, {});
+    const d = defs[field];
+    const label = FIELD_LABEL[field] || (d ? d.label : field);
+    const safe = String(label).replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || field;
+    window.ExcelHandler.exportToExcel(list, `TAQA_Gas_Missing_${safe}_${new Date().toISOString().split('T')[0]}.xlsx`, null);
+  }
+
   // One click handler for the whole table (rows are rebuilt on every filter
   // change, so this is delegated rather than bound per-row).
   document.getElementById('completeness-table').addEventListener('click', (e) => {
+    const exportBtn = e.target.closest('.row-export-btn');
+    if (exportBtn) {
+      exportFieldMissing(exportBtn.getAttribute('data-field'));
+      return;
+    }
+
     const row = e.target.closest('.completeness-row');
     if (!row) return;
     const field = row.getAttribute('data-field');
@@ -608,10 +638,10 @@
     row.classList.add('is-open');
     const shown = list.slice(0, MAX_INLINE_MISSING);
     let body = `<div class="missing-panel"><p class="missing-panel-title">${n(list.length)} employee${list.length === 1 ? '' : 's'} missing this field:</p><div class="missing-grid">` +
-      shown.map(p => `<span class="missing-chip"><strong>${esc(p.id)}</strong> ${esc(p.name)}</span>`).join('') +
+      shown.map(r => `<span class="missing-chip"><strong>${esc(clean(r.id) || '—')}</strong> ${esc(clean(r.employee_name) || '—')}</span>`).join('') +
       '</div>';
     if (list.length > shown.length) {
-      body += `<p class="missing-panel-more">+ ${n(list.length - shown.length)} more — use "Export missing-data list" above for the complete list.</p>`;
+      body += `<p class="missing-panel-more">+ ${n(list.length - shown.length)} more — use the file-download button on this row to get everyone’s full record.</p>`;
     }
     body += '</div>';
     detail.firstElementChild.innerHTML = body;
@@ -646,7 +676,7 @@
       used[name.toLowerCase()] = true;
       summary.push([label, list.length, list.length ? name : '-']);
       if (!list.length) return;
-      const aoa = [['Employee ID', 'Employee Name'], ...list.map(p => [p.id, p.name])];
+      const aoa = [['Employee ID', 'Employee Name'], ...list.map(r => [clean(r.id) || '-', clean(r.employee_name) || '-'])];
       const ws = XLSX.utils.aoa_to_sheet(aoa);
       ws['!cols'] = [{ wch: 14 }, { wch: 42 }];
       XLSX.utils.book_append_sheet(wb, ws, name);

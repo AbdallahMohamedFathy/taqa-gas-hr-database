@@ -527,3 +527,21 @@ td.name { font-weight: 600; color: var(--navy-800); }
   color: var(--text-muted);
   font-style: italic;
 }
+
+/* ---- Per-row "download full record" button in Data Completeness ---- */
+.row-export-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 0.78rem;
+  transition: var(--transition, all 0.15s ease-in-out);
+}
+
+.row-export-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
