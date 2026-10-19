@@ -130,21 +130,21 @@
     // Fetch unique options for dropdown filters
     async getFilterOptions() {
       try {
-        const allData = await this._fetchAllRows('company, department, status, company_sector, division, job_tree');
+        const allData = await this._fetchAllRows('company, department, locations, company_sector, division, job_tree');
 
         const unique = (arr, key) => Array.from(new Set((arr || []).map(x => (x[key] || '').trim()).filter(Boolean))).sort();
 
         return {
           companies: unique(allData, 'company'),
           departments: unique(allData, 'department'),
-          statuses: unique(allData, 'status'),
+          locations: unique(allData, 'locations'),
           sectors: unique(allData, 'company_sector'),
           divisions: unique(allData, 'division'),
           jobTrees: unique(allData, 'job_tree')
         };
       } catch (err) {
         console.error('Error fetching filter options:', err);
-        return { companies: [], departments: [], statuses: [], sectors: [], divisions: [], jobTrees: [] };
+        return { companies: [], departments: [], locations: [], sectors: [], divisions: [], jobTrees: [] };
       }
     },
 
@@ -215,8 +215,8 @@
           if (filters.department) {
             query = query.eq('department', filters.department);
           }
-          if (filters.status) {
-            query = query.eq('status', filters.status);
+          if (filters.locations) {
+            query = query.eq('locations', filters.locations);
           }
           if (filters.gender) {
             query = query.eq('gender', filters.gender);
@@ -413,7 +413,7 @@
         }
         if (filters.company) query = query.eq('company', filters.company);
         if (filters.department) query = query.eq('department', filters.department);
-        if (filters.status) query = query.eq('status', filters.status);
+        if (filters.locations) query = query.eq('locations', filters.locations);
         if (filters.gender) query = query.eq('gender', filters.gender);
         if (filters.company_sector) query = query.eq('company_sector', filters.company_sector);
         if (filters.division) query = query.eq('division', filters.division);

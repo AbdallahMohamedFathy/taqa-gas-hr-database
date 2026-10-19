@@ -8,7 +8,7 @@
     filters: {
       company: '',
       department: '',
-      status: '',
+      locations: '',
       gender: '',
       company_sector: '',
       division: '',
@@ -39,7 +39,7 @@
     filterDivision: document.getElementById('filter-division'),
     filterDepartment: document.getElementById('filter-department'),
     filterJobTree: document.getElementById('filter-job-tree'),
-    filterStatus: document.getElementById('filter-status'),
+    filterLocation: document.getElementById('filter-location'),
     filterGender: document.getElementById('filter-gender'),
     btnResetFilters: document.getElementById('btn-reset-filters'),
     pageSizeSelect: document.getElementById('page-size-select'),
@@ -199,8 +199,8 @@
       els.filterDepartment.innerHTML = '<option value="">جميع الإدارات</option>' +
         options.departments.map(d => `<option value="${d}">${d}</option>`).join('');
 
-      els.filterStatus.innerHTML = '<option value="">جميع الحالات</option>' +
-        options.statuses.map(s => `<option value="${s}">${s}</option>`).join('');
+      els.filterLocation.innerHTML = '<option value="">جميع المحافظات</option>' +
+        (options.locations || []).map(l => `<option value="${l}">${l}</option>`).join('');
 
       els.filterSector.innerHTML = '<option value="">جميع القطاعات (Sector)</option>' +
         (options.sectors || []).map(s => `<option value="${s}">${s}</option>`).join('');
@@ -506,11 +506,11 @@
 
   // Filter Change Listeners
   [els.filterCompany, els.filterSector, els.filterDivision, els.filterDepartment,
-   els.filterJobTree, els.filterStatus, els.filterGender].forEach(select => {
+   els.filterJobTree, els.filterLocation, els.filterGender].forEach(select => {
     select.addEventListener('change', () => {
       state.filters.company = els.filterCompany.value;
       state.filters.department = els.filterDepartment.value;
-      state.filters.status = els.filterStatus.value;
+      state.filters.locations = els.filterLocation.value;
       state.filters.gender = els.filterGender.value;
       state.filters.company_sector = els.filterSector.value;
       state.filters.division = els.filterDivision.value;
@@ -527,10 +527,10 @@
     els.filterDivision.value = '';
     els.filterDepartment.value = '';
     els.filterJobTree.value = '';
-    els.filterStatus.value = '';
+    els.filterLocation.value = '';
     els.filterGender.value = '';
     state.searchQuery = '';
-    state.filters = { company: '', department: '', status: '', gender: '', company_sector: '', division: '', job_tree: '' };
+    state.filters = { company: '', department: '', locations: '', gender: '', company_sector: '', division: '', job_tree: '' };
     loadEmployeesTable();
     showToast('تمت إعادة ضبط جميع الفلاتر', 'info');
   });

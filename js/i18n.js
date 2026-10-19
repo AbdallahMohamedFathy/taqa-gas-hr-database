@@ -58,7 +58,7 @@
     'جميع القطاعات الرئيسية (Division)': 'All divisions',
     'جميع الإدارات': 'All departments',
     'كل شجرة الوظائف (Job Tree)': 'All job trees',
-    'جميع الحالات': 'All statuses',
+    'جميع المحافظات': 'All governorates',
     'النوع (الكل)': 'Gender (all)',
     'ذكر (Male)': 'Male',
     'أنثى (Female)': 'Female',
